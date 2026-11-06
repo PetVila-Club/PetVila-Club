@@ -75,31 +75,20 @@ export const comoFunciona = {
 
 export const club = {
   headline: 'Existe um jeito PetVila de cuidar.',
-  perMonth: 'produtos selecionados todos os meses',
   cycle: 'Assinatura mensal em ciclos de 3, 6 ou 12 meses',
   plans: [
     {
       id: 'essential' as const,
       name: 'Vila Essential',
       tagline: 'O essencial, bem escolhido.',
-      copy: 'O essencial para fazer o mês do seu cão ainda melhor.',
-      count: 4,
-      items: ['1 brinquedo selecionado', '2 snacks', '1 produto de cuidado ou higiene'],
+      copy: 'Tudo o que o seu cão precisa no mês, escolhido com cuidado para a rotina de vocês. Sem excesso: só o que faz sentido, chegando todo mês.',
       core: false,
     },
     {
       id: 'care' as const,
       name: 'Vila Care',
       tagline: 'A experiência completa PetVila.',
-      copy: 'Mais cuidado. Mais descobertas. Mais PetVila.',
-      count: 7,
-      items: [
-        '1 brinquedo premium',
-        '1 brinquedo funcional',
-        '2 snacks premium',
-        '1 produto de higiene',
-        '2 itens surpresa PetVila Originals',
-      ],
+      copy: 'Para quem quer viver a PetVila por inteiro. Mais cuidado, mais descobertas e mais surpresas a cada mês, para o seu cão fazer parte da comunidade PetVila de verdade.',
       core: true,
       originals: {
         title: 'PetVila Originals',
@@ -184,11 +173,10 @@ export const form = {
       value: p.id,
       label: p.name,
       copy: p.tagline,
-      count: p.count as number | undefined,
-      items: p.items as string[],
+      description: p.copy as string | undefined,
       originals: 'originals' in p ? p.originals : undefined,
     })),
-    { value: 'undecided', label: 'Ainda não sei', copy: 'Quero conhecer melhor antes de escolher.', count: undefined, items: [] as string[], originals: undefined },
+    { value: 'undecided', label: 'Ainda não sei', copy: 'Quero conhecer melhor antes de escolher.', description: undefined, originals: undefined },
   ],
   interests: [
     { value: 'alimentacao', label: 'Alimentação' },
