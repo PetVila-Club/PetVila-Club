@@ -5,7 +5,7 @@
  * A etapa do plano (data-plan-step) é pulada quando o cadastro foi aberto pelo
  * botão de um card de plano: o clique já informou o plano de interesse.
  */
-import { club, form, ufs } from '../content/copy';
+import { form, ufs } from '../content/copy';
 import { site } from '../config/site';
 const s = form.steps;
 const total = 6;
@@ -119,10 +119,9 @@ const total = 6;
               <input type="radio" name="preferredPlan" value={o.value} required />
               <span class="plan-opt__name">{o.label}</span>
               <span class="plan-opt__copy">{o.copy}</span>
-              {o.count && (
+              {o.description && (
                 <span class="plan-opt__details">
-                  <span class="plan-opt__count"><strong>{o.count}</strong> {club.perMonth}</span>
-                  <span class="plan-opt__items">{o.items.map((item) => <span>{item}</span>)}</span>
+                  <span class="plan-opt__desc">{o.description}</span>
                   {o.originals && (
                     <span class="plan-opt__originals"><strong>{o.originals.title}</strong> {o.originals.copy}</span>
                   )}
@@ -455,6 +454,7 @@ const total = 6;
   .plan-opt {
     position: relative;
     display: grid;
+    align-content: start;
     gap: 0.15rem;
     padding: 0.9rem 1.15rem 0.9rem 3.1rem;
     border: 1.5px solid var(--fucinho);
@@ -505,37 +505,10 @@ const total = 6;
     font-size: var(--step--1);
     line-height: 1.35;
   }
-  .plan-opt__count {
-    font-weight: 600;
-  }
-  .plan-opt__count strong {
-    color: var(--terra);
-  }
-  .plan-opt__items {
-    display: grid;
-    gap: 0.2rem;
-  }
-  .plan-opt__items span {
-    position: relative;
-    padding-left: 1rem;
-  }
-  .plan-opt__items span::before {
-    content: '';
-    position: absolute;
-    left: 0.1rem;
-    top: 0.5em;
-    width: 0.45rem;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: var(--patinha);
-  }
   .plan-opt__originals {
     padding-top: 0.4rem;
     border-top: 1px solid color-mix(in srgb, currentColor 20%, transparent);
     color: var(--ink-soft);
-  }
-  .plan-opt:has(input:checked) .plan-opt__count strong {
-    color: var(--patinha);
   }
   .plan-opt:has(input:checked) .plan-opt__originals {
     color: inherit;
