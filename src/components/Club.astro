@@ -16,11 +16,7 @@ import { club, cta, store } from '../content/copy';
           <h3 id={`plan-${p.id}`} class="plan__name">{p.name}</h3>
           <p class="plan__tagline">{p.tagline}</p>
           <p class="plan__copy">{p.copy}</p>
-          <p class="plan__count"><strong>{p.count}</strong> {club.perMonth}</p>
           <p class="plan__cycle">{club.cycle}</p>
-          <ul class="plan__items">
-            {p.items.map((item) => <li>{item}</li>)}
-          </ul>
           {p.originals && (
             <div class="plan__originals">
               <p class="plan__originals-title">
@@ -140,68 +136,14 @@ import { club, cta, store } from '../content/copy';
     font-size: var(--step-0);
     max-width: 34ch;
   }
-  .plan__count {
-    align-self: flex-start;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.35rem 1rem 0.35rem 0.35rem;
-    border-radius: 999px;
-    background: var(--fucinho);
-    color: var(--chamego);
-    font-size: var(--step--1);
-    font-weight: 600;
-    line-height: 1.25;
-  }
-  .plan__count strong {
-    display: grid;
-    place-items: center;
-    flex: none;
-    width: 2.2rem;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: var(--patinha);
-    color: var(--chamego);
-    font-size: var(--step-0);
-  }
-  .plan--core .plan__count {
-    background: var(--chamego);
-    color: var(--fucinho);
-  }
-  /* Recorrência e ciclo: discreto, logo abaixo da quantidade mensal. */
+  /* Recorrência e ciclo: discreto, logo abaixo do texto do plano. */
   .plan__cycle {
-    margin-top: -0.35rem;
     font-size: var(--step--1);
     font-weight: 600;
     color: var(--ink-soft);
   }
   .plan--core .plan__cycle {
     color: color-mix(in srgb, var(--chamego) 85%, var(--terra));
-  }
-  .plan__items {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 0.45rem;
-    font-size: var(--step-0);
-  }
-  .plan__items li {
-    position: relative;
-    padding-left: 1.4rem;
-  }
-  .plan__items li::before {
-    content: '';
-    position: absolute;
-    left: 0.15rem;
-    top: 0.5em;
-    width: 0.55rem;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: var(--patinha);
-  }
-  .plan--core .plan__items li::before {
-    background: var(--chamego);
   }
   .plan__originals {
     display: grid;
@@ -333,16 +275,16 @@ import { club, cta, store } from '../content/copy';
   }
   @media (min-width: 960px) {
     /* Os dois cards dividem as mesmas linhas (subgrid): título, frase, texto,
-       quantidade, ciclo, lista, Originals e botão ficam na mesma altura nos dois. */
+       ciclo, Originals e botão ficam na mesma altura nos dois. */
     .club__plans {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-template-rows: repeat(8, auto);
+      grid-template-rows: repeat(6, auto);
     }
     .plan {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows: subgrid;
-      grid-row: span 8;
+      grid-row: span 6;
       row-gap: 1rem;
       justify-content: stretch;
       min-height: 0;
@@ -352,7 +294,7 @@ import { club, cta, store } from '../content/copy';
       align-self: start;
     }
     .plan :global(.plan__cta) {
-      grid-row: 8;
+      grid-row: 6;
       align-self: end;
       justify-self: stretch;
     }
