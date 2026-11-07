@@ -35,8 +35,8 @@ class CycleKit(TimeStampedModel):
     decision_note = models.TextField("justificativa da curadoria", blank=True)
     approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="+",
                                     verbose_name="aprovado por")
-    approved_at = models.DateTimeField(null=True, blank=True)
-    closed_at = models.DateTimeField(null=True, blank=True)
+    approved_at = models.DateTimeField("aprovado em", null=True, blank=True)
+    closed_at = models.DateTimeField("fechado em", null=True, blank=True)
 
     class Meta:
         verbose_name = "kit do ciclo"
@@ -68,7 +68,8 @@ class KitLine(models.Model):
     replaces = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="replaced_by",
                                  verbose_name="substitui")
     justification = models.TextField("justificativa", blank=True)
-    decided_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    decided_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+",
+                                   verbose_name="decidido por")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

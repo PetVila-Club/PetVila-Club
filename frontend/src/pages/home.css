@@ -1,0 +1,18 @@
+.hero { padding-block: clamp(2.5rem, 1rem + 6vw, 6rem); overflow: hidden; }
+.hero__in { display: grid; gap: 2rem; align-items: center; }
+.hero__text { display: grid; gap: 1.25rem; }
+.hero__title { font-size: var(--step-4); max-width: 12ch; }
+.hero__lead { font-size: var(--step-1); max-width: 38rem; color: var(--ink-soft); line-height: 1.4; }
+.hero__art { max-width: 26rem; justify-self: center; color: var(--terra); }
+@media (min-width: 56rem) { .hero__in { grid-template-columns: 1.3fr 1fr; } }
+
+.section { padding-block: clamp(2.5rem, 1.5rem + 4vw, 5rem); }
+
+.steps-grid { list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }
+.steps-grid li { display: grid; gap: 0.5rem; align-content: start; }
+.steps-grid__n { font-weight: 800; color: var(--patinha); font-size: var(--step-1); }
+
+.manifesto { background: var(--terra); color: var(--chamego); padding-block: clamp(3rem, 2rem + 6vw, 7rem); margin-top: 2rem; }
+.manifesto__in { display: grid; gap: 1.25rem; justify-items: center; text-align: center; }
+.manifesto__art { width: 6rem; color: var(--patinha); }
+.manifesto__text { font-family: var(--font-display); font-weight: 800; font-size: var(--step-3); line-height: 1; letter-spacing: -0.03em; }

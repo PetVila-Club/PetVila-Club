@@ -1,0 +1,34 @@
+# Produção em VPS: sobrepõe o docker-compose.yml.
+#   cp .env.docker.example .env   (preencha TODOS os segredos)
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# O Caddy emite e renova o certificado HTTPS do domínio automaticamente.
+services:
+  db:
+    ports: []
+  backend:
+    ports: !reset []
+    environment:
+      DJANGO_DEBUG: "0"
+      SEED_DEMO: "0"
+      DJANGO_SSL_REDIRECT: "0"
+      DJANGO_HSTS_SECONDS: "31536000"
+  frontend:
+    ports: !reset []
+  caddy:
+    image: caddy:2-alpine
+    depends_on:
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?Defina DOMAIN no .env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
