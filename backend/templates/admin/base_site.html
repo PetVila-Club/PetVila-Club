@@ -1,0 +1,25 @@
+{% extends "admin/base.html" %}
+{% load static %}
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | PetVila Club{% endblock %}
+{% block extrastyle %}{{ block.super }}
+<style>
+  :root, html[data-theme="light"] {
+    --primary: #562a22; --secondary: #e25d28; --accent: #ffe1bc; --primary-fg: #ffe1bc;
+    --header-color: #ffe1bc; --header-branding-color: #ffe1bc; --header-bg: #301f03; --header-link-color: #ffe1bc;
+    --breadcrumbs-bg: #562a22; --breadcrumbs-fg: #ffe1bc; --breadcrumbs-link-fg: #ffe1bc;
+    --link-fg: #a8401a; --link-hover-color: #562a22; --link-selected-fg: #562a22;
+    --button-bg: #e25d28; --button-hover-bg: #562a22; --default-button-bg: #562a22; --default-button-hover-bg: #301f03;
+    --selected-row: #fff3e3; --object-tools-bg: #562a22; --object-tools-hover-bg: #e25d28;
+  }
+  #branding h1 a { font-weight: 800; letter-spacing: -0.02em; }
+  .pv-action { max-width: 760px; }
+  .pv-action__desc { font-size: 14px; margin-bottom: 1rem; }
+  .pv-action textarea, .pv-action input[type=text], .pv-action select { width: 100%; max-width: 520px; }
+  .pv-metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin: 0 0 24px; }
+  .pv-metric { background: var(--body-bg); border: 1px solid var(--hairline-color); border-radius: 12px; padding: 14px 16px; }
+  .pv-metric b { display: block; font-size: 22px; margin-top: 4px; color: var(--body-fg); }
+  .pv-metric span { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--body-quiet-color); }
+</style>
+{% endblock %}
+{% block branding %}<div id="site-name"><a href="{% url 'admin:index' %}">PetVila Club · Painel</a></div>{% endblock %}
+{% block nav-global %}{% endblock %}
