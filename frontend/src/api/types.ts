@@ -10,7 +10,7 @@ export interface SKU {
 
 export interface ProductSummary {
   id: number; slug: string; name: string; short_description: string; category: Category; picture: string;
-  is_recurring_food: boolean; is_originals: boolean; from_price_cents: number | null; from_list_price_cents: number | null;
+  is_recurring_food: boolean; is_originals: boolean; from_price_cents: number | null; from_list_price_cents: number | null; from_member_price_cents: number | null;
   sellable: boolean;
 }
 export interface Product extends ProductSummary { description: string; conservation: string; skus: SKU[] }

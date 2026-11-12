@@ -1,0 +1,17 @@
+.pdp { padding-block: 1.25rem 3rem; }
+.pdp__crumbs a { text-decoration: none; }
+.pdp__crumbs a:hover { text-decoration: underline; }
+.pdp__grid { display: grid; gap: 1.5rem; margin-top: 1rem; align-items: start; }
+.pdp__info { display: grid; gap: 1.1rem; align-content: start; }
+.pdp__cat { font-size: var(--step--1); color: var(--ink-soft); font-weight: 600; }
+.pdp__name { font-size: var(--step-2); margin-top: -0.6rem; }
+.pdp__price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; }
+.pdp__price .price { font-size: var(--step-2); }
+.pdp__add { flex: 1; min-width: 12rem; }
+.pdp__about { border-top: 1px solid var(--line); padding-top: 1.25rem; }
+.pdp__about h2 { font-size: var(--step-1); }
+.pdp__related { margin-top: clamp(2.5rem, 1.5rem + 3vw, 4rem); }
+@media (min-width: 56rem) {
+  .pdp__grid { grid-template-columns: 1.1fr 1fr; gap: 3rem; }
+  .pdp__media { position: sticky; top: 9rem; }
+}

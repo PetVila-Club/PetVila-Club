@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.core.services import get_setting
 from apps.orders.pricing import unit_price
 
 from .models import SKU, Category, Product, Tag
@@ -50,12 +51,13 @@ class ProductListSerializer(serializers.ModelSerializer):
     picture = serializers.CharField(read_only=True)
     from_price_cents = serializers.SerializerMethodField()
     from_list_price_cents = serializers.SerializerMethodField()
+    from_member_price_cents = serializers.SerializerMethodField()
     sellable = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = ["id", "slug", "name", "short_description", "category", "picture", "is_recurring_food", "is_originals",
-                  "from_price_cents", "from_list_price_cents", "sellable"]
+                  "from_price_cents", "from_list_price_cents", "from_member_price_cents", "sellable"]
 
     def _skus(self, obj):
         return [s for s in obj.skus.all() if s.is_active and s.price_cents]
@@ -66,6 +68,13 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     def get_from_list_price_cents(self, obj):
         prices = [s.price_cents for s in self._skus(obj)]
+        return min(prices) if prices else None
+
+    def get_from_member_price_cents(self, obj):
+        """Menor preço de membro (SKU a SKU), para mostrar o benefício do Club a quem ainda não é membro."""
+        if not get_setting("subscriber_price_enabled"):
+            return None
+        prices = [unit_price(s, True) for s in self._skus(obj) if s.member_price_cents and s.member_price_cents < s.price_cents]
         return min(prices) if prices else None
 
     def get_sellable(self, obj) -> bool:

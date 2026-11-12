@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { Product } from '../api/types';
-import { ProductPicture } from '../components/Cards';
+import type { Product, ProductSummary } from '../api/types';
+import { ProductPicture, ProductRow } from '../components/Cards';
+import { ClubNote } from '../components/Club';
 import { Alert, Spinner } from '../components/common';
 import { useCart } from '../lib/cart';
 import { money, SIZE_LABEL } from '../lib/format';
 import { useApi } from '../lib/useApi';
+import './product.css';
 
 export default function ProductPage() {
   const { slug } = useParams();
@@ -15,6 +17,7 @@ export default function ProductPage() {
   const [added, setAdded] = useState(false);
   const cart = useCart();
   const navigate = useNavigate();
+  const related = useApi<ProductSummary[]>(product ? `/catalog/products/?category=${product.category.slug}` : null);
 
   useEffect(() => {
     if (product && skuId === null) setSkuId(product.skus.find((s) => s.sellable)?.id ?? product.skus[0]?.id ?? null);
@@ -33,20 +36,21 @@ export default function ProductPage() {
   };
 
   return (
-    <div className="wrap page">
-      <nav className="small muted" aria-label="Trilha"><Link to="/loja">Loja</Link> / <Link to={`/loja?category=${product.category.slug}`}>{product.category.name}</Link></nav>
-      <div className="grid grid--2" style={{ marginTop: '1rem', alignItems: 'start' }}>
-        <ProductPicture product={product} large />
-        <div className="stack" style={{ ['--stack' as string]: '1.1rem' }}>
-          <p className="eyebrow">{product.category.name}</p>
-          <h1 style={{ fontSize: 'var(--step-2)' }}>{product.name}</h1>
+    <div className="wrap pdp">
+      <nav className="small muted pdp__crumbs" aria-label="Trilha"><Link to="/">Início</Link> / <Link to="/loja">Loja</Link> / <Link to={`/loja?category=${product.category.slug}`}>{product.category.name}</Link></nav>
+      <div className="pdp__grid">
+        <div className="pdp__media"><ProductPicture product={product} large /></div>
+        <div className="pdp__info">
+          <p className="pdp__cat">{product.category.name}</p>
+          <h1 className="pdp__name">{product.name}</h1>
           {sku && (
-            <p>
+            <p className="pdp__price">
               {member && <span className="price--old">{money(sku.list_price_cents)}</span>}
               <span className="price">{money(sku.price_cents)}</span>
-              {member && <span className="badge badge--brand" style={{ marginLeft: '0.5rem' }}>Preço de membro</span>}
+              {member && <span className="badge badge--brand">Preço de membro</span>}
             </p>
           )}
+          {sku && <ClubNote listCents={sku.list_price_cents} memberCents={sku.member_price_cents} />}
           {product.skus.length > 1 && (
             <fieldset>
               <legend>Variante</legend>
@@ -74,7 +78,7 @@ export default function ProductPage() {
                 <span aria-live="polite">{qty}</span>
                 <button type="button" onClick={() => setQty((q) => Math.min(sku.available, q + 1))} aria-label="Aumentar">+</button>
               </div>
-              <button type="button" className="btn btn--brand" onClick={add}>Adicionar ao carrinho</button>
+              <button type="button" className="btn btn--brand pdp__add" onClick={add}>Adicionar ao carrinho</button>
             </div>
           ) : (
             <Alert tone="warn">Indisponível para venda no momento.</Alert>
@@ -91,8 +95,8 @@ export default function ProductPage() {
               <Link to={`/assinar-racao/${product.slug}/${sku.id}`} className="btn btn--brand">Assinar esta ração</Link>
             </div>
           )}
-          <div className="stack">
-            <h2 style={{ fontSize: 'var(--step-1)' }}>Sobre o produto</h2>
+          <div className="stack pdp__about">
+            <h2>Sobre o produto</h2>
             <p>{product.description}</p>
             {sku && sku.contains.length > 0 && <p className="small"><strong>Composição/materiais:</strong> {sku.contains.map((t) => t.name).join(', ')}</p>}
             {sku && sku.suitable_sizes.length > 0 && <p className="small"><strong>Indicado para porte:</strong> {sku.suitable_sizes.map((s) => SIZE_LABEL[s] || s).join(', ')}</p>}
@@ -100,6 +104,10 @@ export default function ProductPage() {
             <p className="small muted">Informações de produto não substituem orientação veterinária.</p>
           </div>
         </div>
+      </div>
+      <div className="pdp__related">
+        <ProductRow title="Você também pode gostar" link={`/loja?category=${product.category.slug}`}
+          products={(related.data || []).filter((p) => p.slug !== product.slug).slice(0, 4)} />
       </div>
     </div>
   );
