@@ -17,6 +17,8 @@
   --line: color-mix(in srgb, var(--fucinho) 22%, transparent);
   --card: color-mix(in srgb, #fff 45%, var(--chamego));
   --card-strong: color-mix(in srgb, #fff 70%, var(--chamego));
+  --paper: color-mix(in srgb, #fff 62%, var(--chamego));
+  --radius-card: 1.25rem;
   --ok: #2f6b3a;
   --warn: #8a4b00;
   --danger: #a3261b;

@@ -1,0 +1,36 @@
+/* Benefício do Club dentro da loja */
+.club-band {
+  display: grid; gap: 2rem; border-radius: var(--radius); background: var(--fucinho); color: var(--chamego);
+  padding: clamp(1.5rem, 1rem + 3vw, 3.5rem); overflow: hidden;
+}
+.club-band__text { display: grid; gap: 1.25rem; justify-items: start; align-content: center; }
+.club-band__text h2 { font-size: var(--step-2); max-width: 18ch; }
+.club-band__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.85rem; }
+.club-band__list li { display: grid; gap: 0.1rem; padding-left: 1.6rem; position: relative; }
+.club-band__list li::before {
+  content: ''; position: absolute; left: 0; top: 0.35rem; width: 0.85rem; height: 0.85rem;
+  border-radius: 50% 50% 50% 0; background: var(--patinha); transform: rotate(-45deg);
+}
+.club-band__list span { opacity: 0.8; font-size: var(--step--1); }
+.club-band__plans { position: relative; display: grid; gap: 0.85rem; align-content: center; }
+.club-plan {
+  position: relative; z-index: 1; display: grid; gap: 0.15rem; padding: 1.1rem 1.25rem; border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--chamego) 10%, transparent); border: 1px solid color-mix(in srgb, var(--chamego) 25%, transparent);
+  text-decoration: none; transition: transform 250ms var(--ease-out);
+}
+.club-plan:hover { transform: translateY(-2px); }
+.club-plan--core { background: var(--terra); border-color: var(--patinha); }
+.club-plan__name { font-family: var(--font-display); font-weight: 800; font-size: var(--step-1); letter-spacing: -0.02em; }
+.club-plan__tag { opacity: 0.85; font-size: var(--step--1); }
+.club-plan__price { margin-top: 0.4rem; font-weight: 800; font-size: var(--step-1); }
+.club-plan__price small { font-weight: 500; font-size: var(--step--1); opacity: 0.8; }
+.club-band__art { position: absolute; right: -3rem; bottom: -4rem; width: 14rem; color: var(--patinha); opacity: 0.18; }
+@media (min-width: 56rem) { .club-band { grid-template-columns: 1.15fr 1fr; } }
+
+.club-note {
+  display: grid; gap: 0.35rem; justify-items: start; padding: 1rem 1.15rem; border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--patinha) 14%, var(--paper)); border: 1.5px solid color-mix(in srgb, var(--patinha) 55%, transparent);
+}
+.club-note__price b { font-size: var(--step-1); font-weight: 800; }
+.club-note a { font-weight: 700; text-underline-offset: 3px; }
+.club-note--on { background: color-mix(in srgb, var(--ok) 10%, transparent); border-color: var(--ok); color: var(--ok); font-weight: 600; }

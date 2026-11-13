@@ -152,3 +152,14 @@ def test_expired_order_releases_reservation_once(auth, tutor):
     assert expire_unpaid_orders() == 1
     assert expire_unpaid_orders() == 0
     assert StockLevel.objects.get(sku=s).reserved == 0
+
+
+def test_product_list_shows_member_price_to_everyone(api, auth, tutor):
+    """A vitrine mostra o preço de membro (SKU a SKU) também para quem ainda não assinou."""
+    def bolinha(client):
+        return next(p for p in client.get("/api/v1/catalog/products/").json() if p["slug"] == "bolinha-vila")
+
+    guest = bolinha(api)
+    assert guest["from_price_cents"] == 3990
+    assert guest["from_member_price_cents"] == 3590
+    assert bolinha(auth(tutor))["from_member_price_cents"] == 3590

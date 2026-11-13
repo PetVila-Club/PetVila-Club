@@ -1,18 +1,60 @@
-.hero { padding-block: clamp(2.5rem, 1rem + 6vw, 6rem); overflow: hidden; }
-.hero__in { display: grid; gap: 2rem; align-items: center; }
-.hero__text { display: grid; gap: 1.25rem; }
-.hero__title { font-size: var(--step-4); max-width: 12ch; }
-.hero__lead { font-size: var(--step-1); max-width: 38rem; color: var(--ink-soft); line-height: 1.4; }
-.hero__art { max-width: 26rem; justify-self: center; color: var(--terra); }
-@media (min-width: 56rem) { .hero__in { grid-template-columns: 1.3fr 1fr; } }
+.hero-shop { padding-block: 1.25rem 0; }
+.hero-shop__grid { display: grid; gap: 1rem; }
+.banner {
+  position: relative; overflow: hidden; display: grid; align-items: center; text-decoration: none;
+  border-radius: var(--radius); padding: clamp(1.5rem, 1rem + 2.5vw, 3.25rem);
+}
+.banner__text { position: relative; z-index: 1; display: grid; gap: 0.9rem; justify-items: start; }
+.banner--main { background: var(--terra); color: var(--chamego); grid-template-columns: 1fr; min-height: 22rem; }
+.banner--main h1 { font-size: var(--step-3); max-width: 14ch; }
+.banner--main p { max-width: 30rem; opacity: 0.9; }
+.banner__art { position: absolute; right: -2rem; bottom: -2rem; width: min(55%, 22rem); color: var(--patinha); opacity: 0.35; }
+.banner--club { background: var(--patinha); color: var(--fucinho); min-height: 14rem; }
+.banner--club h2 { font-size: var(--step-2); }
+.banner--club p { max-width: 18rem; font-weight: 600; }
+.banner--club .btn--ghost { border-color: var(--fucinho); }
+.banner__dog { position: absolute; right: 1rem; bottom: 0; width: 7rem; color: var(--fucinho); opacity: 0.85; }
+.banner:hover .btn { transform: translateY(-1px); }
+@media (min-width: 56rem) {
+  .hero-shop__grid { grid-template-columns: 2fr 1fr; }
+  .banner--main { min-height: 26rem; }
+  .banner__art { opacity: 1; right: 2rem; bottom: 50%; translate: 0 50%; width: 19rem; }
+  .banner--main .banner__text { max-width: 58%; }
+  .banner__dog { width: 9rem; }
+}
 
-.section { padding-block: clamp(2.5rem, 1.5rem + 4vw, 5rem); }
+.cat-tiles {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 6.5rem; gap: 0.75rem; overflow-x: auto;
+  padding-block: 1.75rem 0.5rem; scrollbar-width: thin;
+}
+.cat-tile { display: grid; gap: 0.5rem; justify-items: center; text-align: center; text-decoration: none; }
+.cat-tile__art {
+  width: 5.5rem; height: 5.5rem; border-radius: 50%; display: grid; place-items: center; color: var(--hue);
+  background: color-mix(in srgb, var(--hue) 18%, var(--paper)); transition: transform 300ms var(--ease-out);
+}
+.cat-tile__art .art { width: 46%; }
+.cat-tile:hover .cat-tile__art { transform: translateY(-3px); }
+.cat-tile__name { font-size: 0.82rem; font-weight: 700; line-height: 1.2; }
+@media (min-width: 64rem) { .cat-tiles { grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr)); overflow: visible; } }
 
-.steps-grid { list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }
-.steps-grid li { display: grid; gap: 0.5rem; align-content: start; }
-.steps-grid__n { font-weight: 800; color: var(--patinha); font-size: var(--step-1); }
+.home-stack { display: grid; gap: clamp(2.5rem, 1.5rem + 3vw, 4rem); padding-block: 2rem 1rem; }
 
-.manifesto { background: var(--terra); color: var(--chamego); padding-block: clamp(3rem, 2rem + 6vw, 7rem); margin-top: 2rem; }
-.manifesto__in { display: grid; gap: 1.25rem; justify-items: center; text-align: center; }
-.manifesto__art { width: 6rem; color: var(--patinha); }
-.manifesto__text { font-family: var(--font-display); font-weight: 800; font-size: var(--step-3); line-height: 1; letter-spacing: -0.03em; }
+.assurances {
+  list-style: none; margin: 0; padding: 1.5rem 0 0; border-top: 1px solid var(--line);
+  display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
+.assurances li { display: grid; gap: 0.2rem; font-size: var(--step--1); }
+.assurances strong { font-size: var(--step-0); }
+.assurances span { color: var(--ink-soft); }
+@media (max-width: 55.99rem) {
+  .banner--main { min-height: 0; }
+  .banner--main h1 { font-size: var(--step-2); max-width: 16ch; }
+  .banner--main p { display: none; }
+  .banner__art { width: 9rem; right: -1.5rem; bottom: -1.5rem; opacity: 0.3; }
+  .banner--club { min-height: 0; padding-block: 1.25rem; }
+  .banner--club .banner__text { gap: 0.5rem; }
+  .banner--club .btn { min-height: 2.4rem; padding: 0.35rem 1rem; font-size: var(--step--1); }
+  .banner__dog { width: 4.5rem; right: 0.75rem; }
+  .banner--club p { display: none; }
+  .hero-shop__grid { gap: 0.75rem; }
+}
