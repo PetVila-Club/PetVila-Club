@@ -16,12 +16,16 @@
 .shop__layout { display: grid; gap: 1.5rem; }
 .shop__side { display: grid; gap: 1rem; align-content: start; }
 .shop__side-title { display: none; font-weight: 800; }
-.shop__cats { list-style: none; margin: 0; padding: 0 0 0.25rem; display: flex; gap: 0.5rem; overflow-x: auto; scrollbar-width: thin; }
-.shop__cats button {
+.shop__subs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: -0.25rem 0 1.25rem; }
+.shop__subs button, .shop__tree button {
   white-space: nowrap; border: 1.5px solid var(--line); background: var(--paper); border-radius: 999px;
   padding: 0.35rem 0.9rem; font-size: var(--step--1); font-weight: 600;
 }
-.shop__cats button.is-on { background: var(--fucinho); color: var(--chamego); border-color: var(--fucinho); }
+.shop__subs button:hover { border-color: var(--fucinho); }
+.shop__tree { list-style: none; margin: 0; padding: 0 0 0.25rem; display: flex; gap: 0.5rem; overflow-x: auto; scrollbar-width: thin; }
+.shop__tree > li { display: contents; }
+.shop__subtree { display: none; }
+.shop__tree button.is-on { background: var(--fucinho); color: var(--chamego); border-color: var(--fucinho); }
 .shop__member { font-weight: 600; }
 
 .shop__bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
@@ -36,10 +40,13 @@
   .shop__layout { grid-template-columns: 14rem 1fr; gap: 2.5rem; }
   .shop__side { position: sticky; top: 9rem; }
   .shop__side-title { display: block; }
-  .shop__cats { flex-direction: column; gap: 0.15rem; overflow: visible; }
-  .shop__cats button { border: 0; background: none; padding: 0.4rem 0; border-radius: 0; text-align: left; font-weight: 500; font-size: var(--step-0); }
-  .shop__cats button:hover { color: var(--patinha); }
-  .shop__cats button.is-on { background: none; color: var(--fucinho); font-weight: 800; box-shadow: inset 3px 0 0 var(--patinha); padding-left: 0.75rem; }
+  .shop__tree { flex-direction: column; gap: 0.1rem; overflow: visible; }
+  .shop__tree > li { display: block; }
+  .shop__tree button { border: 0; background: none; padding: 0.35rem 0; border-radius: 0; text-align: left; font-weight: 600; font-size: var(--step-0); white-space: normal; }
+  .shop__tree button:hover { color: var(--patinha); }
+  .shop__tree button.is-on { background: none; color: var(--fucinho); font-weight: 800; box-shadow: inset 3px 0 0 var(--patinha); padding-left: 0.75rem; }
+  .shop__subtree { display: grid; list-style: none; margin: 0 0 0.5rem; padding: 0 0 0 0.9rem; border-left: 1px solid var(--line); }
+  .shop__subtree button { font-weight: 500; font-size: var(--step--1); }
   .shop__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (min-width: 80rem) { .shop__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }

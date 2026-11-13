@@ -1,28 +1,29 @@
 import { Link } from 'react-router-dom';
-import type { Category, ProductSummary } from '../api/types';
+import type { Department, ProductSummary } from '../api/types';
 import { BoxArt, DogArt } from '../components/Brand';
-import { categoryHue, ProductRow } from '../components/Cards';
+import { ProductRow } from '../components/Cards';
 import { ClubBand } from '../components/Club';
 import { Spinner } from '../components/common';
+import { departmentOf, hueFor } from '../lib/departments';
 import { useApi } from '../lib/useApi';
 import './home.css';
 
 export default function Home() {
   const products = useApi<ProductSummary[]>('/catalog/products/');
-  const categories = useApi<Category[]>('/catalog/categories/');
+  const departments = useApi<Department[]>('/catalog/departments/');
   const all = products.data || [];
 
-  // Destaques: um produto de cada categoria por rodada, priorizando quem tem preço de membro.
-  const pool = [...all].filter((p) => p.sellable)
+  // Destaques: um produto de cada departamento por rodada, priorizando quem tem preço de membro.
+  const pool = [...all].filter((p) => p.sellable && departmentOf(p))
     .sort((a, b) => Number(b.from_member_price_cents !== null) - Number(a.from_member_price_cents !== null));
   const groups = new Map<string, ProductSummary[]>();
-  pool.forEach((p) => groups.set(p.category.slug, [...(groups.get(p.category.slug) || []), p]));
+  pool.forEach((p) => { const d = departmentOf(p)!; groups.set(d, [...(groups.get(d) || []), p]); });
   const highlights: ProductSummary[] = [];
   for (let round = 0; highlights.length < 8 && round < 4; round += 1) {
     groups.forEach((items) => { if (items[round] && highlights.length < 8) highlights.push(items[round]); });
   }
-  const byCategory = (slug: string) => all.filter((p) => p.category.slug === slug).slice(0, 4);
-  const rows = (categories.data || []).filter((c) => byCategory(c.slug).length >= 4).slice(0, 3);
+  const byDepartment = (slug: string) => all.filter((p) => departmentOf(p) === slug && p.sellable).slice(0, 4);
+  const rows = (departments.data || []).filter((d) => byDepartment(d.slug).length >= 4);
 
   return (
     <>
@@ -47,12 +48,13 @@ export default function Home() {
         </div>
       </section>
 
-      {categories.data && categories.data.length > 0 && (
+      {departments.data && departments.data.length > 0 && (
         <nav className="wrap cat-tiles" aria-label="Compre por categoria">
-          {categories.data.map((c) => (
-            <Link key={c.slug} to={`/loja?category=${c.slug}`} className="cat-tile" style={{ ['--hue' as string]: categoryHue(c.slug) }}>
+          {departments.data.map((d) => (
+            <Link key={d.slug} to={`/loja?section=${d.slug}`} className="cat-tile" style={{ ['--hue' as string]: hueFor(d.slug) }}>
               <span className="cat-tile__art" aria-hidden="true"><DogArt /></span>
-              <span className="cat-tile__name">{c.name}</span>
+              <span className="cat-tile__name">{d.name}</span>
+              {d.children.length > 0 && <span className="cat-tile__subs">{d.children.slice(0, 3).map((c) => c.name).join(' · ')}</span>}
             </Link>
           ))}
           <Link to="/loja?food=1" className="cat-tile" style={{ ['--hue' as string]: 'var(--terra)' }}>
@@ -65,8 +67,8 @@ export default function Home() {
       <div className="wrap home-stack">
         {products.loading ? <Spinner /> : <ProductRow title="Destaques da Vila" link="/loja" products={highlights} />}
         <ClubBand />
-        {rows.map((c) => (
-          <ProductRow key={c.slug} title={c.name} link={`/loja?category=${c.slug}`} products={byCategory(c.slug)} />
+        {rows.map((d) => (
+          <ProductRow key={d.slug} title={d.name} link={`/loja?section=${d.slug}`} products={byDepartment(d.slug)} />
         ))}
         <ul className="assurances" aria-label="Por que comprar na PetVila">
           <li><strong>Curadoria com olhar humano</strong><span>Cada produto passa pela mesma escolha dos kits do Club.</span></li>

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import type { Category, ProductSummary } from '../api/types';
+import type { Department, ProductSummary } from '../api/types';
 import { ProductCard } from '../components/Cards';
 import { Alert, Empty, Spinner } from '../components/common';
 import { useAuth } from '../lib/auth';
+import { findSection } from '../lib/departments';
 import { useApi } from '../lib/useApi';
 import './store.css';
 
@@ -11,19 +12,19 @@ type Sort = 'relevance' | 'price-asc' | 'price-desc' | 'member';
 
 export default function Store() {
   const [params, setParams] = useSearchParams();
-  const category = params.get('category') || '';
+  const section = params.get('section') || '';
   const food = params.get('food') === '1';
   const q = params.get('q') || '';
   const { user } = useAuth();
   const [sort, setSort] = useState<Sort>('relevance');
   const [onlyMember, setOnlyMember] = useState(false);
   const query = new URLSearchParams();
-  if (category) query.set('category', category);
+  if (section) query.set('section', section);
   if (food) query.set('food', '1');
   if (q) query.set('q', q);
   const products = useApi<ProductSummary[]>(`/catalog/products/?${query.toString()}`);
-  const categories = useApi<Category[]>('/catalog/categories/');
-  const current = categories.data?.find((c) => c.slug === category);
+  const departments = useApi<Department[]>('/catalog/departments/');
+  const { department, sub } = findSection(departments.data, section);
 
   const hasMember = (p: ProductSummary) => p.from_member_price_cents !== null
     || (p.from_price_cents !== null && p.from_list_price_cents !== null && p.from_price_cents < p.from_list_price_cents);
@@ -35,18 +36,30 @@ export default function Store() {
     return Number(hasMember(b)) - Number(hasMember(a));
   });
 
-  const title = q ? `Resultados para “${q}”` : food ? 'Ração recorrente' : current?.name || 'Todos os produtos';
+  const title = q ? `Resultados para “${q}”` : food ? 'Ração recorrente' : sub?.name || department?.name || 'Todos os produtos';
   const go = (next: Record<string, string>) => setParams(next, { replace: true });
+  const openDept = department?.slug ?? (food ? 'alimentos' : null);
 
   return (
     <div className="wrap shop">
       <nav className="shop__crumbs small muted" aria-label="Trilha">
-        <Link to="/">Início</Link> / <Link to="/loja">Loja</Link>{(current || food) && <> / <span>{current?.name || 'Ração recorrente'}</span></>}
+        <Link to="/">Início</Link> / <Link to="/loja">Loja</Link>
+        {department && <> / {sub ? <Link to={`/loja?section=${department.slug}`}>{department.name}</Link> : <span>{department.name}</span>}</>}
+        {sub && <> / <span>{sub.name}</span></>}
+        {food && <> / <Link to="/loja?section=alimentos">Alimentos</Link> / <span>Ração recorrente</span></>}
       </nav>
       <header className="shop__head">
         <h1>{title}</h1>
         {food && <p className="muted">Escolha a ração e a frequência. A recorrência mantém SKU e quantidade, com calendário próprio. Nunca trocamos marca ou fórmula automaticamente.</p>}
       </header>
+
+      {department && !sub && department.children.length > 0 && (
+        <div className="shop__subs" role="group" aria-label={`Subcategorias de ${department.name}`}>
+          {department.children.map((c) => (
+            <button key={c.slug} type="button" onClick={() => go({ section: c.slug })}>{c.name}</button>
+          ))}
+        </div>
+      )}
 
       {!user?.is_member && (
         <Link to="/planos" className="shop__club">
@@ -58,12 +71,21 @@ export default function Store() {
       <div className="shop__layout">
         <aside className="shop__side" aria-label="Filtros">
           <p className="shop__side-title">Categorias</p>
-          <ul className="shop__cats">
-            <li><button type="button" className={!category && !food ? 'is-on' : ''} onClick={() => go(q ? { q } : {})}>Todos os produtos</button></li>
-            {categories.data?.map((c) => (
-              <li key={c.slug}><button type="button" className={category === c.slug ? 'is-on' : ''} onClick={() => go({ category: c.slug })}>{c.name}</button></li>
+          <ul className="shop__tree">
+            <li><button type="button" className={!section && !food ? 'is-on' : ''} onClick={() => go(q ? { q } : {})}>Todos os produtos</button></li>
+            {departments.data?.map((d) => (
+              <li key={d.slug}>
+                <button type="button" className={`shop__dept ${section === d.slug ? 'is-on' : ''}`} onClick={() => go({ section: d.slug })}>{d.name}</button>
+                {openDept === d.slug && (d.children.length > 0 || d.slug === 'alimentos') && (
+                  <ul className="shop__subtree">
+                    {d.children.map((c) => (
+                      <li key={c.slug}><button type="button" className={section === c.slug ? 'is-on' : ''} onClick={() => go({ section: c.slug })}>{c.name}</button></li>
+                    ))}
+                    {d.slug === 'alimentos' && <li><button type="button" className={food ? 'is-on' : ''} onClick={() => go({ food: '1' })}>Ração recorrente</button></li>}
+                  </ul>
+                )}
+              </li>
             ))}
-            <li><button type="button" className={food ? 'is-on' : ''} onClick={() => go({ food: '1' })}>Ração recorrente</button></li>
           </ul>
           <label className="check shop__member">
             <input type="checkbox" checked={onlyMember} onChange={(e) => setOnlyMember(e.target.checked)} />
@@ -86,7 +108,7 @@ export default function Store() {
           </div>
           {products.loading && <Spinner />}
           {products.error && <Alert tone="error">{products.error.message}</Alert>}
-          {products.data && sorted.length === 0 && <Empty title="Nada por aqui ainda">Tente outra categoria ou busca.</Empty>}
+          {products.data && sorted.length === 0 && <Empty title="Nada por aqui ainda">Estamos escolhendo os produtos desta categoria. Volte em breve.</Empty>}
           {sorted.length > 0 && <div className="shop__grid">{sorted.map((p) => <ProductCard key={p.slug} product={p} />)}</div>}
         </section>
       </div>
