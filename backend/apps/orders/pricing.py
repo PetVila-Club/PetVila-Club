@@ -23,6 +23,27 @@ def is_member(user) -> bool:
     return Subscription.objects.filter(user=user, kind=Subscription.Kind.KIT, status=Subscription.Status.ACTIVE).exists()
 
 
+def joined_subscription(user, subscription_key: str | None) -> bool:
+    """Pedido da loja feito junto com uma assinatura de kit recém-contratada (mesma contratação).
+
+    Vale o preço de membro mesmo antes da primeira cobrança do kit ser compensada, porque o cliente
+    assinou no mesmo fluxo. Limitado a 2 horas depois da contratação.
+    """
+    if not subscription_key or not user or not user.is_authenticated:
+        return False
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.subscriptions.models import Subscription
+
+    return Subscription.objects.filter(
+        user=user, kind=Subscription.Kind.KIT, checkout_key=subscription_key,
+        status__in=[Subscription.Status.PENDING, Subscription.Status.ACTIVE],
+        created_at__gte=timezone.now() - timedelta(hours=2),
+    ).exists()
+
+
 def unit_price(sku: SKU, member: bool) -> int:
     if sku.price_cents is None:
         raise DomainError(f"{sku.display_name} está sem preço e não pode ser vendido.")
@@ -46,6 +67,11 @@ class QuoteLine:
     def discount_cents(self) -> int:
         return (self.list_price_cents - self.unit_price_cents) * self.quantity
 
+    @property
+    def member_unit_price_cents(self) -> int:
+        """Quanto esta linha custaria para um membro do Club (SKU a SKU)."""
+        return unit_price(self.sku, True)
+
     def as_dict(self) -> dict:
         return {
             "sku_id": self.sku.pk,
@@ -55,6 +81,7 @@ class QuoteLine:
             "list_price_cents": self.list_price_cents,
             "unit_price_cents": self.unit_price_cents,
             "total_cents": self.total_cents,
+            "member_unit_price_cents": self.member_unit_price_cents,
             "available": self.sku.available_quantity(),
         }
 
@@ -80,9 +107,28 @@ class Quote:
     def total_cents(self) -> int:
         return self.subtotal_cents - self.discount_cents + self.shipping_cents
 
+    @property
+    def member_merchandise_cents(self) -> int:
+        return sum(line.member_unit_price_cents * line.quantity for line in self.lines)
+
+    @property
+    def club_savings_cents(self) -> int:
+        """Quanto o cliente economizaria neste pedido se fosse membro. Zero para quem já é."""
+        if self.member_pricing:
+            return 0
+        return max(0, sum(line.total_cents for line in self.lines) - self.member_merchandise_cents)
+
     def as_dict(self) -> dict:
+        club_offer = None
+        if not self.member_pricing and self.lines:
+            from apps.plans.services import recommend_plan_for_cart
+
+            club_offer = recommend_plan_for_cart(self.lines)
         return {
             "lines": [line.as_dict() for line in self.lines],
+            "member_merchandise_cents": self.member_merchandise_cents,
+            "club_savings_cents": self.club_savings_cents,
+            "club_offer": club_offer,
             "member_pricing": self.member_pricing,
             "subtotal_cents": self.subtotal_cents,
             "discount_cents": self.discount_cents,
@@ -95,8 +141,8 @@ class Quote:
         }
 
 
-def build_quote(user, items: list[dict], cep: str | None) -> Quote:
-    member = is_member(user)
+def build_quote(user, items: list[dict], cep: str | None, subscription_key: str | None = None) -> Quote:
+    member = is_member(user) or joined_subscription(user, subscription_key)
     problems: list[str] = []
     merged: dict[int, int] = {}
     for item in items:
@@ -110,7 +156,7 @@ def build_quote(user, items: list[dict], cep: str | None) -> Quote:
     if not merged:
         raise DomainError("Carrinho vazio.")
 
-    skus = {s.pk: s for s in SKU.objects.select_related("product", "stock", "product__category").filter(pk__in=merged)}
+    skus = {s.pk: s for s in SKU.objects.select_related("product", "stock", "product__category", "product__store_category__parent").filter(pk__in=merged)}
     lines: list[QuoteLine] = []
     for sku_id, qty in merged.items():
         sku = skus.get(sku_id)

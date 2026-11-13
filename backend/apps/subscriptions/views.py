@@ -102,6 +102,7 @@ def contract_kit_view(request):
         accept_terms=bool(request.data.get("accept_terms")),
         checkout_key=request.headers.get("Idempotency-Key") or request.data.get("idempotency_key", ""),
         ip=client_ip(request),
+        food=request.data.get("food") or None,
     )
     return Response({"subscriptions": SubscriptionSerializer(subs, many=True).data}, status=201)
 

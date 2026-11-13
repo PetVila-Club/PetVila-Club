@@ -277,9 +277,10 @@ def test_food_subscription_is_independent_from_kit(auth, api, tutor):
     kit_sub = contract(client, tutor, [thor]).json()["subscriptions"][0]
     pay_first_cycle(api, kit_sub)
     food_sku = SKU.objects.get(product__slug="racao-adulto-cordeiro")
+    # Assinante ativo paga preço de membro também na recorrência de ração
     response = client.post("/api/v1/checkout/food/", {
         "sku_id": food_sku.pk, "quantity": 1, "frequency_days": 30, "address_id": tutor.addresses.first().pk,
-        "billing_type": "PIX", "dog_id": thor.pk, "expected_price_cents": food_sku.price_cents, "accept_terms": True,
+        "billing_type": "PIX", "dog_id": thor.pk, "expected_price_cents": food_sku.member_price_cents, "accept_terms": True,
     }, format="json", HTTP_IDEMPOTENCY_KEY=uuid.uuid4().hex)
     assert response.status_code == 201, response.json()
     food = response.json()["subscriptions"][0]
@@ -329,3 +330,41 @@ def test_metrics_and_export_restricted(auth, tutor, staff):
     assert export.status_code == 200
     assert export.json()["schema_version"] == "1.0"
     assert auth(staff["gestor"]).get("/api/v1/ops/metrics/").status_code == 200
+
+
+def test_plan_checkout_with_food_cross_sell_at_member_price(auth, tutor):
+    client = auth(tutor)
+    thor = tutor.dogs.get(name="Thor")
+    food_sku = SKU.objects.get(product__slug="racao-adulto-frango")
+    plan = Plan.objects.get(code="care")
+    key = uuid.uuid4().hex
+    payload = {"plan": "care", "dog_ids": [thor.pk], "address_id": tutor.addresses.first().pk, "billing_type": "PIX",
+               "commitment_months": 3, "offer_id": plan.current_offer().pk, "accept_terms": True,
+               "food": {"sku_id": food_sku.pk, "quantity": 2, "expected_price_cents": 2 * food_sku.member_price_cents}}
+    response = client.post("/api/v1/checkout/subscription/", payload, format="json", HTTP_IDEMPOTENCY_KEY=key)
+    assert response.status_code == 201, response.json()
+    kinds = sorted(s["kind"] for s in response.json()["subscriptions"])
+    assert kinds == ["food", "kit"]
+    food = Subscription.objects.get(user=tutor, kind="food")
+    assert food.price_cents == 2 * food_sku.member_price_cents
+    assert food.checkout_key == f"{key}:racao"
+    assert food.dog == thor
+    # Retomada idempotente devolve kit e ração, sem duplicar
+    again = client.post("/api/v1/checkout/subscription/", payload, format="json", HTTP_IDEMPOTENCY_KEY=key)
+    assert len(again.json()["subscriptions"]) == 2
+    assert Subscription.objects.filter(user=tutor, kind="food").count() == 1
+
+
+def test_food_cross_sell_price_is_checked_before_creating_kit(auth, tutor):
+    client = auth(tutor)
+    thor = tutor.dogs.get(name="Thor")
+    food_sku = SKU.objects.get(product__slug="racao-adulto-frango")
+    plan = Plan.objects.get(code="care")
+    response = client.post("/api/v1/checkout/subscription/", {
+        "plan": "care", "dog_ids": [thor.pk], "address_id": tutor.addresses.first().pk, "billing_type": "PIX",
+        "commitment_months": 3, "offer_id": plan.current_offer().pk, "accept_terms": True,
+        "food": {"sku_id": food_sku.pk, "quantity": 1, "expected_price_cents": food_sku.price_cents},
+    }, format="json", HTTP_IDEMPOTENCY_KEY=uuid.uuid4().hex)
+    assert response.status_code == 409
+    assert response.json()["code"] == "total_changed"
+    assert not Subscription.objects.filter(user=tutor).exists()

@@ -83,8 +83,13 @@ def _start_provider_subscription(sub: Subscription, description: str, cycle: str
 
 def contract_kits(user, *, plan_code: str, dog_ids: list[int], address_id: int, billing_type: str,
                   commitment_months: int | None, offer_id: int, accept_terms: bool, checkout_key: str,
-                  ip: str = "") -> list[Subscription]:
-    """J01/J02: um vínculo de assinatura por cão; o pedido pode agrupar vários vínculos."""
+                  ip: str = "", food: dict | None = None) -> list[Subscription]:
+    """J01/J02: um vínculo de assinatura por cão; o pedido pode agrupar vários vínculos.
+
+    `food` (opcional, cross sell): {sku_id, quantity, expected_price_cents}. Contrata junto uma recorrência de
+    ração mensal a preço de membro, com o mesmo endereço e meio de pagamento. É uma cobrança recorrente própria
+    no provedor (kit e ração seguem separados, PDR seção 7), mas entra na mesma contratação.
+    """
     if not accept_terms:
         raise DomainError("É preciso aceitar as condições da assinatura.")
     if billing_type not in Subscription.BillingType.values:
@@ -107,11 +112,16 @@ def contract_kits(user, *, plan_code: str, dog_ids: list[int], address_id: int, 
     if len(dogs) != len(set(dog_ids)):
         raise DomainError("Cão não encontrado.")
     address = _check_address(user, address_id)
+    food_key = f"{checkout_key}:racao"
+    if food:
+        # Valida a ração antes de criar qualquer assinatura, para não deixar contratação pela metade.
+        _food_price(user, int(food.get("sku_id") or 0), int(food.get("quantity") or 1),
+                    int(food.get("expected_price_cents") or -1), member=True)
 
     # Retomada idempotente da mesma contratação
     existing = list(Subscription.objects.filter(user=user, checkout_key=checkout_key, kind=Subscription.Kind.KIT))
     if existing and all(s.asaas_subscription_id for s in existing) and len(existing) == len(dogs):
-        return existing
+        return existing + list(Subscription.objects.filter(user=user, checkout_key=food_key, kind=Subscription.Kind.FOOD))
 
     for dog in dogs:
         clash = Subscription.objects.filter(dog=dog, kind=Subscription.Kind.KIT, status__in=OPEN_STATUSES).exclude(
@@ -145,19 +155,20 @@ def contract_kits(user, *, plan_code: str, dog_ids: list[int], address_id: int, 
         if not sub.asaas_subscription_id:
             _start_provider_subscription(sub, f"PetVila Club · {plan.name} · {dog.name}", "MONTHLY")
         subs.append(sub)
+    if food:
+        subs.append(contract_food(
+            user, sku_id=int(food["sku_id"]), quantity=int(food.get("quantity") or 1), frequency_days=30,
+            address_id=address_id, billing_type=billing_type, dog_id=dogs[0].pk if len(dogs) == 1 else None,
+            expected_price_cents=int(food.get("expected_price_cents") or -1), accept_terms=accept_terms,
+            checkout_key=food_key, ip=ip, member_price=True,
+        ))
     return subs
 
 
-def contract_food(user, *, sku_id: int, quantity: int, frequency_days: int, address_id: int, billing_type: str,
-                  dog_id: int | None, expected_price_cents: int, accept_terms: bool, checkout_key: str,
-                  ip: str = "") -> Subscription:
-    """RAC-01: ração contratada sem depender de kit, com SKU e quantidade preservados."""
-    if not accept_terms:
-        raise DomainError("É preciso aceitar as condições da recorrência.")
-    if billing_type not in Subscription.BillingType.values:
-        raise DomainError("Meio de pagamento indisponível.")
-    if frequency_days not in FOOD_FREQUENCIES:
-        raise DomainError("Frequência indisponível.")
+def _food_price(user, sku_id: int, quantity: int, expected_price_cents: int, *, member: bool):
+    """Valida a ração e devolve (sku, preço total). Preço de membro para assinante ou contratação junto do kit."""
+    from apps.orders.pricing import is_member, unit_price
+
     if quantity < 1 or quantity > 10:
         raise DomainError("Quantidade inválida.")
     sku = SKU.objects.select_related("product").filter(pk=sku_id, is_active=True, product__is_recurring_food=True).first()
@@ -165,10 +176,24 @@ def contract_food(user, *, sku_id: int, quantity: int, frequency_days: int, addr
         raise DomainError("Esta ração não está disponível para recorrência.")
     if sku.missing_sale_data():
         raise DomainError("Esta ração está temporariamente indisponível.")
-    price = sku.price_cents * quantity
+    price = unit_price(sku, member or is_member(user)) * quantity
     if price != expected_price_cents:
         raise ConflictError("O valor da ração foi atualizado. Revise antes de confirmar.", code="total_changed",
                             data={"price_cents": price})
+    return sku, price
+
+
+def contract_food(user, *, sku_id: int, quantity: int, frequency_days: int, address_id: int, billing_type: str,
+                  dog_id: int | None, expected_price_cents: int, accept_terms: bool, checkout_key: str,
+                  ip: str = "", member_price: bool = False) -> Subscription:
+    """RAC-01: ração contratada sem depender de kit, com SKU e quantidade preservados."""
+    if not accept_terms:
+        raise DomainError("É preciso aceitar as condições da recorrência.")
+    if billing_type not in Subscription.BillingType.values:
+        raise DomainError("Meio de pagamento indisponível.")
+    if frequency_days not in FOOD_FREQUENCIES:
+        raise DomainError("Frequência indisponível.")
+    sku, price = _food_price(user, sku_id, quantity, expected_price_cents, member=member_price)
     dog = user.dogs.filter(pk=dog_id).first() if dog_id else None
     if dog_id and dog is None:
         raise DomainError("Cão não encontrado.")
@@ -186,6 +211,7 @@ def contract_food(user, *, sku_id: int, quantity: int, frequency_days: int, addr
                     "terms_version": SUBSCRIPTION_TERMS_VERSION, "sku": sku.snapshot(), "quantity": quantity,
                     "frequency_days": frequency_days, "price_cents": price, "accepted_at": timezone.now().isoformat(),
                     "ip": ip, "text": "Recorrência de ração sem troca automática de marca ou fórmula.",
+                    "member_price": price < sku.price_cents * quantity,
                 },
             ),
         )

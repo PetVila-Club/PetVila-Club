@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import type { Subscription } from '../api/types';
+import type { Order, Subscription } from '../api/types';
 import { Alert, Spinner, StatusBadge } from '../components/common';
 import { PaymentBox } from '../components/PaymentBox';
 import { money } from '../lib/format';
@@ -9,6 +9,8 @@ export default function SubscriptionConfirmation() {
   const [params] = useSearchParams();
   const ids = (params.get('ids') || '').split(',').filter(Boolean);
   const { data, loading, reload } = useApi<Subscription[]>('/me/subscriptions/');
+  const orderId = params.get('pedido');
+  const order = useApi<Order>(orderId ? `/me/orders/${orderId}/` : null);
 
   if (loading && !data) return <Spinner />;
   const subs = (data || []).filter((s) => ids.includes(String(s.id)));
@@ -17,7 +19,6 @@ export default function SubscriptionConfirmation() {
   return (
     <div className="wrap page">
       <header className="page__head">
-        <p className="eyebrow">Contratação registrada</p>
         <h1>Bem-vindos à Vila.</h1>
         <p>Cada assinatura tem número próprio e cobrança própria. O estado abaixo é o real: a curadoria só começa depois que o pagamento é confirmado.</p>
       </header>
@@ -35,7 +36,23 @@ export default function SubscriptionConfirmation() {
             )}
           </section>
         ))}
+        {order.data && (
+          <section className="card stack">
+            <div className="summary__row">
+              <h2 style={{ fontSize: 'var(--step-1)' }}>Pedido da loja {order.data.number}</h2>
+              <StatusBadge status={order.data.status} label={order.data.status_label} />
+            </div>
+            <p className="small muted">
+              {order.data.lines.map((l) => `${l.quantity} × ${l.product_name}`).join(', ')} · {money(order.data.total_cents)}
+              {order.data.member_pricing && order.data.discount_cents > 0 ? `, com ${money(order.data.discount_cents)} de preço de membro` : ''}
+            </p>
+            {order.data.payment && <PaymentBox payment={order.data.payment} onChange={() => order.reload()} />}
+          </section>
+        )}
       </div>
+      {params.get('carrinho') === 'revisar' && (
+        <Alert tone="warn">Os itens do carrinho não entraram nesta contratação porque os valores mudaram. <Link to="/carrinho">Revise o carrinho</Link>.</Alert>
+      )}
       <div className="btn-row" style={{ marginTop: '2rem' }}>
         <Link to="/minha-vila/assinaturas" className="btn">Ir para Minha Vila</Link>
       </div>

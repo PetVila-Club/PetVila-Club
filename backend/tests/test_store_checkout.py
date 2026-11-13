@@ -175,3 +175,40 @@ def test_store_menu_tree_and_section_filter(api, seeded):
     assert {p["store_category"]["parent"]["slug"] for p in food} == {"alimentos"}
     snacks = api.get("/api/v1/catalog/products/?section=snacks").json()
     assert snacks and all(p["store_category"]["slug"] == "snacks" for p in snacks)
+
+
+def test_guest_quote_offers_club_with_savings(api, seeded):
+    s = sku("bolinha-vila")
+    q = api.post("/api/v1/checkout/quote/", {"items": [{"sku_id": s.pk, "quantity": 2}], "cep": "01310100"},
+                 format="json").json()
+    assert q["member_pricing"] is False
+    assert q["lines"][0]["member_unit_price_cents"] == 3590
+    assert q["club_savings_cents"] == 2 * (3990 - 3590)
+    offer = q["club_offer"]
+    assert offer is not None and offer["price_cents"] > 0
+    assert offer["top_item"]
+
+
+def test_member_quote_has_no_club_offer(auth, tutor):
+    client = auth(tutor)
+    Subscription.objects.create(user=tutor, kind="kit", status="active", price_cents=20990, billing_type="PIX",
+                                shipping_address={}, dog=tutor.dogs.first())
+    q = quote(client, [{"sku_id": sku("bolinha-vila").pk, "quantity": 1}])
+    assert q["club_offer"] is None
+    assert q["club_savings_cents"] == 0
+
+
+def test_store_order_in_same_flow_as_new_subscription_gets_member_price(auth, tutor):
+    client = auth(tutor)
+    s = sku("bolinha-vila")
+    items = [{"sku_id": s.pk, "quantity": 1}]
+    Subscription.objects.create(user=tutor, kind="kit", status="pending", price_cents=20990, billing_type="PIX",
+                                shipping_address={}, dog=tutor.dogs.first(), checkout_key="kit-123")
+    # Chave errada não dá desconto
+    assert quote(client, items)["member_pricing"] is False
+    q = client.post("/api/v1/checkout/quote/", {"items": items, "cep": "01310100", "subscription_key": "kit-123"},
+                    format="json").json()
+    assert q["member_pricing"] is True
+    response = checkout(client, tutor, items, q["total_cents"], subscription_key="kit-123")
+    assert response.status_code == 201, response.json()
+    assert response.json()["total_cents"] == q["total_cents"]

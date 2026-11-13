@@ -34,7 +34,9 @@ export default function SubscribeFood() {
   if (!product.data || !sku || !product.data.is_recurring_food) {
     return <div className="wrap page"><Alert tone="error">Esta ração não está disponível para recorrência.</Alert></div>;
   }
-  const unit = sku.list_price_cents ?? 0;
+  // Preço exibido já vem com o preço de membro para quem assina o Club; o servidor confere de novo.
+  const unit = sku.price_cents ?? 0;
+  const memberDeal = sku.list_price_cents !== null && unit < sku.list_price_cents;
   const price = unit * quantity;
 
   const submit = async () => {
@@ -57,7 +59,6 @@ export default function SubscribeFood() {
   return (
     <div className="wrap page">
       <header className="page__head">
-        <p className="eyebrow">Ração recorrente</p>
         <h1>{product.data.name}{sku.variant_name ? ` · ${sku.variant_name}` : ''}</h1>
         <p>Recorrência independente do kit: pausar ou cancelar a ração não muda a sua assinatura do Club. Se faltar estoque, avisamos e registramos a decisão com você; nunca enviamos outra marca ou fórmula por padrão.</p>
       </header>
@@ -99,7 +100,7 @@ export default function SubscribeFood() {
         <aside className="card card--strong stack">
           <h2 style={{ fontSize: 'var(--step-1)' }}>Resumo</h2>
           <div className="summary">
-            <div className="summary__row"><span>{quantity} × {money(unit)}</span><span>{money(price)}</span></div>
+            <div className="summary__row"><span>{quantity} × {money(unit)}{memberDeal ? ' · preço de assinante' : ''}</span><span>{money(price)}</span></div>
             <div className="summary__row small muted"><span>Frete</span><span>conforme a região do endereço</span></div>
             <div className="summary__row summary__row--total"><span>Por entrega</span><span>{money(price)} + frete</span></div>
           </div>
