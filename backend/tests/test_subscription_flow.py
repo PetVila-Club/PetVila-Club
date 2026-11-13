@@ -26,7 +26,7 @@ def contract(client, user, dogs, plan="care", key=None, commitment=3):
     offer = plan_obj.current_offer()
     return client.post(
         "/api/v1/checkout/subscription/",
-        {"plan": plan, "dog_ids": [d.pk for d in dogs], "address_id": user.addresses.first().pk, "billing_type": "PIX",
+        {"plan": plan, "dog_ids": [d.pk for d in dogs], "address_id": user.addresses.first().pk, "billing_type": "CREDIT_CARD",
          "commitment_months": commitment, "offer_id": offer.pk if offer else 0, "accept_terms": True},
         format="json", HTTP_IDEMPOTENCY_KEY=key or uuid.uuid4().hex,
     )
@@ -280,7 +280,7 @@ def test_food_subscription_is_independent_from_kit(auth, api, tutor):
     # Assinante ativo paga preço de membro também na recorrência de ração
     response = client.post("/api/v1/checkout/food/", {
         "sku_id": food_sku.pk, "quantity": 1, "frequency_days": 30, "address_id": tutor.addresses.first().pk,
-        "billing_type": "PIX", "dog_id": thor.pk, "expected_price_cents": food_sku.member_price_cents, "accept_terms": True,
+        "billing_type": "CREDIT_CARD", "dog_id": thor.pk, "expected_price_cents": food_sku.member_price_cents, "accept_terms": True,
     }, format="json", HTTP_IDEMPOTENCY_KEY=uuid.uuid4().hex)
     assert response.status_code == 201, response.json()
     food = response.json()["subscriptions"][0]
@@ -302,7 +302,7 @@ def test_food_stockout_never_swaps_brand(auth, api, tutor):
     level.save()
     response = client.post("/api/v1/checkout/food/", {
         "sku_id": food_sku.pk, "quantity": 1, "frequency_days": 30, "address_id": tutor.addresses.first().pk,
-        "billing_type": "PIX", "expected_price_cents": food_sku.price_cents, "accept_terms": True,
+        "billing_type": "CREDIT_CARD", "expected_price_cents": food_sku.price_cents, "accept_terms": True,
     }, format="json", HTTP_IDEMPOTENCY_KEY=uuid.uuid4().hex)
     food = response.json()["subscriptions"][0]
     pay_first_cycle(api, food)
@@ -338,7 +338,7 @@ def test_plan_checkout_with_food_cross_sell_at_member_price(auth, tutor):
     food_sku = SKU.objects.get(product__slug="racao-adulto-frango")
     plan = Plan.objects.get(code="care")
     key = uuid.uuid4().hex
-    payload = {"plan": "care", "dog_ids": [thor.pk], "address_id": tutor.addresses.first().pk, "billing_type": "PIX",
+    payload = {"plan": "care", "dog_ids": [thor.pk], "address_id": tutor.addresses.first().pk, "billing_type": "CREDIT_CARD",
                "commitment_months": 3, "offer_id": plan.current_offer().pk, "accept_terms": True,
                "food": {"sku_id": food_sku.pk, "quantity": 2, "expected_price_cents": 2 * food_sku.member_price_cents}}
     response = client.post("/api/v1/checkout/subscription/", payload, format="json", HTTP_IDEMPOTENCY_KEY=key)
@@ -361,10 +361,31 @@ def test_food_cross_sell_price_is_checked_before_creating_kit(auth, tutor):
     food_sku = SKU.objects.get(product__slug="racao-adulto-frango")
     plan = Plan.objects.get(code="care")
     response = client.post("/api/v1/checkout/subscription/", {
-        "plan": "care", "dog_ids": [thor.pk], "address_id": tutor.addresses.first().pk, "billing_type": "PIX",
+        "plan": "care", "dog_ids": [thor.pk], "address_id": tutor.addresses.first().pk, "billing_type": "CREDIT_CARD",
         "commitment_months": 3, "offer_id": plan.current_offer().pk, "accept_terms": True,
         "food": {"sku_id": food_sku.pk, "quantity": 1, "expected_price_cents": food_sku.price_cents},
     }, format="json", HTTP_IDEMPOTENCY_KEY=uuid.uuid4().hex)
     assert response.status_code == 409
     assert response.json()["code"] == "total_changed"
+    assert not Subscription.objects.filter(user=tutor).exists()
+
+
+@pytest.mark.parametrize("billing", ["PIX", "BOLETO"])
+def test_recurring_only_accepts_credit_card(auth, tutor, billing):
+    client = auth(tutor)
+    thor = tutor.dogs.get(name="Thor")
+    plan = Plan.objects.get(code="care")
+    response = client.post("/api/v1/checkout/subscription/", {
+        "plan": "care", "dog_ids": [thor.pk], "address_id": tutor.addresses.first().pk, "billing_type": billing,
+        "commitment_months": 3, "offer_id": plan.current_offer().pk, "accept_terms": True,
+    }, format="json", HTTP_IDEMPOTENCY_KEY=uuid.uuid4().hex)
+    assert response.status_code == 400
+    assert response.json()["code"] == "billing_not_allowed"
+    food_sku = SKU.objects.get(product__slug="racao-adulto-frango")
+    response = client.post("/api/v1/checkout/food/", {
+        "sku_id": food_sku.pk, "quantity": 1, "frequency_days": 30, "address_id": tutor.addresses.first().pk,
+        "billing_type": billing, "expected_price_cents": food_sku.price_cents, "accept_terms": True,
+    }, format="json", HTTP_IDEMPOTENCY_KEY=uuid.uuid4().hex)
+    assert response.status_code == 400
+    assert response.json()["code"] == "billing_not_allowed"
     assert not Subscription.objects.filter(user=tutor).exists()

@@ -212,3 +212,15 @@ def test_store_order_in_same_flow_as_new_subscription_gets_member_price(auth, tu
     response = checkout(client, tutor, items, q["total_cents"], subscription_key="kit-123")
     assert response.status_code == 201, response.json()
     assert response.json()["total_cents"] == q["total_cents"]
+
+
+def test_store_accepts_card_and_pix_but_not_boleto(auth, tutor):
+    client = auth(tutor)
+    items = [{"sku_id": sku("bolinha-vila").pk, "quantity": 1}]
+    total = quote(client, items)["total_cents"]
+    boleto = checkout(client, tutor, items, total, billing_type="BOLETO")
+    assert boleto.status_code == 400
+    assert boleto.json()["code"] == "billing_not_allowed"
+    card = checkout(client, tutor, items, total, billing_type="CREDIT_CARD")
+    assert card.status_code == 201, card.json()
+    assert card.json()["billing_type"] == "CREDIT_CARD"

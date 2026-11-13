@@ -81,6 +81,16 @@ def _start_provider_subscription(sub: Subscription, description: str, cycle: str
         pass  # a primeira cobrança chega também pelo webhook PAYMENT_CREATED
 
 
+# Recorrência (planos e ração) só no cartão de crédito (regra de 13/11/2026). Pix e boleto seguem nas
+# choices do modelo só para assinaturas antigas.
+RECURRING_BILLING_TYPES = {Subscription.BillingType.CREDIT_CARD}
+
+
+def _check_recurring_billing(billing_type: str) -> None:
+    if billing_type not in RECURRING_BILLING_TYPES:
+        raise DomainError("Assinaturas e ração recorrente são pagas só com cartão de crédito.", code="billing_not_allowed")
+
+
 def contract_kits(user, *, plan_code: str, dog_ids: list[int], address_id: int, billing_type: str,
                   commitment_months: int | None, offer_id: int, accept_terms: bool, checkout_key: str,
                   ip: str = "", food: dict | None = None) -> list[Subscription]:
@@ -92,8 +102,7 @@ def contract_kits(user, *, plan_code: str, dog_ids: list[int], address_id: int, 
     """
     if not accept_terms:
         raise DomainError("É preciso aceitar as condições da assinatura.")
-    if billing_type not in Subscription.BillingType.values:
-        raise DomainError("Meio de pagamento indisponível.")
+    _check_recurring_billing(billing_type)
     if not checkout_key:
         raise DomainError("Chave de idempotência ausente.")
     plan = Plan.objects.filter(code=plan_code, is_active=True).first()
@@ -189,8 +198,7 @@ def contract_food(user, *, sku_id: int, quantity: int, frequency_days: int, addr
     """RAC-01: ração contratada sem depender de kit, com SKU e quantidade preservados."""
     if not accept_terms:
         raise DomainError("É preciso aceitar as condições da recorrência.")
-    if billing_type not in Subscription.BillingType.values:
-        raise DomainError("Meio de pagamento indisponível.")
+    _check_recurring_billing(billing_type)
     if frequency_days not in FOOD_FREQUENCIES:
         raise DomainError("Frequência indisponível.")
     sku, price = _food_price(user, sku_id, quantity, expected_price_cents, member=member_price)

@@ -16,7 +16,8 @@ from apps.payments.asaas import AsaasError
 from .models import Order, OrderLine
 from .pricing import build_quote
 
-BILLING_TYPES = {"PIX", "BOLETO", "CREDIT_CARD"}
+# Compra avulsa da loja: cartão de crédito ou Pix (regra de 13/11/2026; boleto saiu).
+BILLING_TYPES = {"PIX", "CREDIT_CARD"}
 STORE_TERMS_VERSION = "2026-11-01"
 
 
@@ -28,7 +29,7 @@ def checkout_store(user, *, items: list[dict], address_id: int, billing_type: st
     if existing:
         return existing  # CHK-03: repetir a solicitação não cria nova compra
     if billing_type not in BILLING_TYPES:
-        raise DomainError("Meio de pagamento indisponível.")
+        raise DomainError("Na loja, o pagamento é por cartão de crédito ou Pix.", code="billing_not_allowed")
     if not accept_terms:
         raise DomainError("É preciso aceitar as condições da compra.")
     if not user.cpf:

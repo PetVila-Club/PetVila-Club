@@ -247,7 +247,7 @@ export function SubscribeScreen({ route, navigation }: NativeStackScreenProps<Ro
   const [selected, setSelected] = useState<number[]>([]);
   const [commitment, setCommitment] = useState<number | null>(null);
   const [addressId, setAddressId] = useState<number | null>(null);
-  const [billing, setBilling] = useState('PIX');
+  const [billing, setBilling] = useState('CREDIT_CARD');
   const [accept, setAccept] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -296,7 +296,7 @@ export function SubscribeScreen({ route, navigation }: NativeStackScreenProps<Ro
         </View>
       )}
       <AddressChoice value={addressId} onChange={setAddressId} />
-      <BillingChoice value={billing} onChange={setBilling} />
+      <BillingChoice value={billing} onChange={setBilling} recurring />
       <Card>
         <Row><Text>Total mensal</Text><Text variant="price">{money((offer.price_cents + offer.shipping_cents) * selected.length)}</Text></Row>
         <Text variant="small">Cobrança recorrente automática, uma por cão. A curadoria começa após a confirmação do pagamento.</Text>

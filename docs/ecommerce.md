@@ -109,6 +109,9 @@ cd mobile && npm run typecheck
 
 Como a integração cumpre o PDR:
 
+- **Meios aceitos** (regra de 13/11/2026): assinaturas de plano e ração recorrente só no **cartão de crédito**;
+  compra avulsa da loja no **cartão de crédito ou Pix**. Boleto não é oferecido. O backend recusa outros meios
+  com `billing_not_allowed`.
 - **Cartão** é pago na fatura hospedada pelo Asaas (`invoiceUrl`): a PetVila nunca recebe nem guarda dados de cartão.
 - **Assinaturas**: uma assinatura Asaas por cão (`cycle=MONTHLY`; ração `MONTHLY`/`BIMONTHLY`). Cada cobrança
   gerada vira um `Cycle` único (chave: ID da cobrança), então evento repetido não cria dois pedidos.

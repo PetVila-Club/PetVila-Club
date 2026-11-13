@@ -24,7 +24,7 @@ export default function SubscribeFood() {
   const [frequency, setFrequency] = useState(30);
   const [dogId, setDogId] = useState<number | ''>('');
   const [addressId, setAddressId] = useState<number | null>(null);
-  const [billing, setBilling] = useState('PIX');
+  const [billing, setBilling] = useState('CREDIT_CARD');
   const [accept, setAccept] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -104,7 +104,7 @@ export default function SubscribeFood() {
             <div className="summary__row small muted"><span>Frete</span><span>conforme a região do endereço</span></div>
             <div className="summary__row summary__row--total"><span>Por entrega</span><span>{money(price)} + frete</span></div>
           </div>
-          <p className="small"><strong>Cobrança recorrente automática</strong> {frequency === 30 ? 'a cada 30 dias' : 'a cada 60 dias'}. A primeira cobrança é gerada agora.</p>
+          <p className="small"><strong>Cobrança automática no cartão de crédito</strong> {frequency === 30 ? 'a cada 30 dias' : 'a cada 60 dias'}. A primeira cobrança é gerada agora.</p>
           <label className="check">
             <input type="checkbox" checked={accept} onChange={(e) => setAccept(e.target.checked)} />
             <span>Li e aceito as <Link to="/termos" target="_blank">condições da recorrência</Link> e autorizo a cobrança automática.</span>

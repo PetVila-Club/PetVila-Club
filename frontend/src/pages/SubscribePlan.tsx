@@ -37,7 +37,7 @@ export default function SubscribePlan() {
   const [commitment, setCommitment] = useState<number | null>(null);
   const [addressId, setAddressId] = useState<number | null>(null);
   const [address, setAddress] = useState<Address | null>(null);
-  const [billing, setBilling] = useState('PIX');
+  const [billing, setBilling] = useState('CREDIT_CARD');
   const [accept, setAccept] = useState(false);
   const [addingDog, setAddingDog] = useState(false);
   const [error, setError] = useState('');
@@ -240,7 +240,7 @@ export default function SubscribePlan() {
                 ))}
               </ul>
               {cartQuote.problems.map((msg) => <Alert tone="warn" key={msg}>{msg}</Alert>)}
-              <p className="field__hint">Compra única, com cobrança própria. Entrega no mesmo endereço, frete de {money(cartQuote.shipping_cents)}.</p>
+              <p className="field__hint">Compra única no cartão, com cobrança própria. Entrega no mesmo endereço, frete de {money(cartQuote.shipping_cents)}.</p>
             </fieldset>
           )}
 
@@ -267,9 +267,9 @@ export default function SubscribePlan() {
             )}
           </div>
           <p className="small">
-            <strong>Cobrança recorrente automática</strong> todo mês, uma por cão{food ? ' e uma da ração' : ''}, no meio de pagamento escolhido.
+            <strong>Cobrança automática no cartão de crédito</strong> todo mês, uma por cão{food ? ' e uma da ração' : ''}.
             {commitmentValue ? ` Ciclo mínimo de ${commitmentValue} meses.` : ''} A primeira cobrança é gerada agora; a curadoria começa após a confirmação do pagamento.
-            {withCart ? ' Os itens do carrinho geram uma cobrança única à parte.' : ''}
+            {withCart ? ' Os itens do carrinho são uma cobrança única no cartão, à parte.' : ''}
           </p>
           {offer.terms && <p className="small muted">{offer.terms}</p>}
           <label className="check">
