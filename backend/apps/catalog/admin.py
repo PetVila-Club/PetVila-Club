@@ -3,7 +3,7 @@ from django.contrib import admin
 from apps.core.services import audit, format_brl
 from apps.inventory.models import StockLevel
 
-from .models import SKU, Category, Product, Tag
+from .models import SKU, Category, Product, StoreCategory, Tag
 
 
 @admin.register(Category)
@@ -11,6 +11,30 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display = ["name", "slug", "is_kit_category", "show_in_store", "sort"]
     list_editable = ["sort", "show_in_store"]
     prepopulated_fields = {"slug": ["name"]}
+
+
+class StoreCategoryChildInline(admin.TabularInline):
+    model = StoreCategory
+    fk_name = "parent"
+    extra = 0
+    fields = ["name", "slug", "sort", "is_active"]
+    prepopulated_fields = {"slug": ["name"]}
+    verbose_name = "subcategoria"
+    verbose_name_plural = "subcategorias"
+
+
+@admin.register(StoreCategory)
+class StoreCategoryAdmin(admin.ModelAdmin):
+    """Menu da loja. Os departamentos aparecem no topo; as subcategorias, no painel ao passar o mouse."""
+
+    list_display = ["__str__", "slug", "sort", "is_active"]
+    list_editable = ["sort", "is_active"]
+    list_filter = ["parent"]
+    prepopulated_fields = {"slug": ["name"]}
+    inlines = [StoreCategoryChildInline]
+
+    def get_inlines(self, request, obj):
+        return self.inlines if obj is None or obj.parent_id is None else []
 
 
 @admin.register(Tag)
@@ -32,8 +56,9 @@ class SKUInline(admin.StackedInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ["name", "category", "is_active", "is_recurring_food", "is_originals"]
-    list_filter = ["category", "is_active", "is_recurring_food", "is_originals"]
+    list_display = ["name", "store_category", "category", "is_active", "is_recurring_food", "is_originals"]
+    list_filter = ["store_category__parent", "store_category", "category", "is_active", "is_recurring_food", "is_originals"]
+    list_editable = ["store_category"]
     search_fields = ["name", "slug", "skus__code"]
     prepopulated_fields = {"slug": ["name"]}
     inlines = [SKUInline]

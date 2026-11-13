@@ -1,25 +1,18 @@
 import { Link } from 'react-router-dom';
 import type { Plan, ProductSummary } from '../api/types';
 import { useAuth } from '../lib/auth';
+import { departmentOf, hueFor, productLabel } from '../lib/departments';
 import { money } from '../lib/format';
 import { DogArt } from './Brand';
 import './cards.css';
 
-const CATEGORY_HUE: Record<string, string> = {
-  brinquedo: 'var(--patinha)', 'snack-padrao': 'var(--terra)', 'snack-natural': '#7a5b2e', higiene: '#6f7f5a',
-  'refeicao-natural': '#a8401a', racao: 'var(--terra)', biobone: '#8b5a2b', passeio: 'var(--fucinho)',
-};
-
-export function categoryHue(slug: string) {
-  return CATEGORY_HUE[slug] || 'var(--terra)';
-}
 
 export function ProductPicture({ product, large = false }: { product: ProductSummary; large?: boolean }) {
   if (product.picture) {
     return <img className={`pic ${large ? 'pic--lg' : ''}`} src={product.picture} alt="" loading="lazy" />;
   }
   return (
-    <div className={`pic pic--art ${large ? 'pic--lg' : ''}`} style={{ ['--hue' as string]: categoryHue(product.category.slug) }} aria-hidden="true">
+    <div className={`pic pic--art ${large ? 'pic--lg' : ''}`} style={{ ['--hue' as string]: hueFor(departmentOf(product)) }} aria-hidden="true">
       <DogArt />
     </div>
   );
@@ -43,7 +36,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
           </div>
         </div>
         <div className="pcard__body">
-          <p className="pcard__cat">{product.category.name}</p>
+          <p className="pcard__cat">{productLabel(product)}</p>
           <h3 className="pcard__name">{product.name}</h3>
           <div className="pcard__price">
             {memberApplied && <span className="price--old">{money(product.from_list_price_cents)}</span>}

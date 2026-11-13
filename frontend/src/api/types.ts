@@ -8,8 +8,11 @@ export interface SKU {
   contains: Tag[]; suitable_sizes: string[];
 }
 
+export interface StoreCategoryRef { slug: string; name: string; parent: { slug: string; name: string } | null }
+export interface Department { slug: string; name: string; children: { slug: string; name: string }[] }
+
 export interface ProductSummary {
-  id: number; slug: string; name: string; short_description: string; category: Category; picture: string;
+  id: number; slug: string; name: string; short_description: string; category: Category; store_category: StoreCategoryRef | null; picture: string;
   is_recurring_food: boolean; is_originals: boolean; from_price_cents: number | null; from_list_price_cents: number | null; from_member_price_cents: number | null;
   sellable: boolean;
 }

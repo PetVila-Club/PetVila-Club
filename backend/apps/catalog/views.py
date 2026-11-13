@@ -1,11 +1,12 @@
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from rest_framework import permissions, viewsets
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from apps.orders.pricing import is_member
 
-from .models import SKU, Category, Product, Tag
-from .serializers import CategorySerializer, ProductDetailSerializer, ProductListSerializer, TagSerializer
+from .models import SKU, Category, Product, StoreCategory, Tag
+from .serializers import (CategorySerializer, ProductDetailSerializer, ProductListSerializer, StoreDepartmentSerializer,
+                          TagSerializer)
 
 
 class OptionalJWTAuthentication(JWTAuthentication):
@@ -25,6 +26,15 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     lookup_field = "slug"
 
 
+class StoreDepartmentViewSet(viewsets.ReadOnlyModelViewSet):
+    """Menu da loja: departamentos com as subcategorias ativas."""
+
+    queryset = StoreCategory.objects.filter(parent__isnull=True, is_active=True).prefetch_related("children")
+    serializer_class = StoreDepartmentSerializer
+    permission_classes = [permissions.AllowAny]
+    lookup_field = "slug"
+
+
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
@@ -39,12 +49,15 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         qs = (
             Product.objects.filter(is_active=True, category__show_in_store=True)
-            .select_related("category")
+            .select_related("category", "store_category__parent")
             .prefetch_related(Prefetch("skus", queryset=SKU.objects.select_related("stock", "product").prefetch_related("contains")))
         )
         category = self.request.query_params.get("category")
         if category:
             qs = qs.filter(category__slug=category)
+        section = self.request.query_params.get("section")
+        if section:
+            qs = qs.filter(Q(store_category__slug=section) | Q(store_category__parent__slug=section))
         if self.request.query_params.get("food") == "1":
             qs = qs.filter(is_recurring_food=True)
         search = self.request.query_params.get("q")

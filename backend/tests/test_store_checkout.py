@@ -163,3 +163,15 @@ def test_product_list_shows_member_price_to_everyone(api, auth, tutor):
     assert guest["from_price_cents"] == 3990
     assert guest["from_member_price_cents"] == 3590
     assert bolinha(auth(tutor))["from_member_price_cents"] == 3590
+
+
+def test_store_menu_tree_and_section_filter(api, seeded):
+    """Menu da loja: departamentos com subcategorias; filtrar pelo departamento traz as subcategorias."""
+    menu = {d["slug"]: [c["slug"] for c in d["children"]] for d in api.get("/api/v1/catalog/departments/").json()}
+    assert list(menu)[:4] == ["alimentos", "higiene-e-cuidado", "mordedores", "brinquedos"]
+    assert {"snacks", "snacks-naturais", "racao-seca", "racao-umida"} <= set(menu["alimentos"])
+    assert menu["acessorios"] == ["passeio", "comedouros", "bolsas-e-organizadores"] and "passeio" not in menu
+    food = api.get("/api/v1/catalog/products/?section=alimentos").json()
+    assert {p["store_category"]["parent"]["slug"] for p in food} == {"alimentos"}
+    snacks = api.get("/api/v1/catalog/products/?section=snacks").json()
+    assert snacks and all(p["store_category"]["slug"] == "snacks" for p in snacks)

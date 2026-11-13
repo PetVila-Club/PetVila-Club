@@ -28,6 +28,28 @@ class Category(TimeStampedModel):
         return self.name
 
 
+class StoreCategory(TimeStampedModel):
+    """Navegação da loja (menu, vitrine): departamento > subcategoria.
+
+    Independente de Category, que define a composição dos kits e a curadoria.
+    """
+
+    parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="children",
+                               verbose_name="departamento (vazio = é um departamento)")
+    slug = models.SlugField(unique=True)
+    name = models.CharField("nome", max_length=80)
+    sort = models.PositiveIntegerField("ordem", default=0)
+    is_active = models.BooleanField("exibir na loja", default=True)
+
+    class Meta:
+        verbose_name = "categoria da loja"
+        verbose_name_plural = "categorias da loja (menu)"
+        ordering = ["sort", "name"]
+
+    def __str__(self):
+        return f"{self.parent.name} › {self.name}" if self.parent_id else self.name
+
+
 class Tag(models.Model):
     """Vocabulário de ingredientes, materiais e características usado em SKUs e cães (PET-02)."""
 
@@ -53,6 +75,8 @@ class Product(TimeStampedModel):
     name = models.CharField("nome", max_length=160)
     slug = models.SlugField(unique=True)
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name="products", verbose_name="categoria")
+    store_category = models.ForeignKey(StoreCategory, null=True, blank=True, on_delete=models.SET_NULL,
+                                       related_name="products", verbose_name="categoria na loja")
     short_description = models.CharField("resumo", max_length=200, blank=True)
     description = models.TextField("descrição", blank=True)
     conservation = models.TextField("instruções de conservação", blank=True)
