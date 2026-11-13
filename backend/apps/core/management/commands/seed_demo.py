@@ -14,7 +14,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.accounts.models import Address, User
-from apps.catalog.models import SKU, Category, Product, Tag
+from apps.catalog.models import SKU, Category, Product, StoreCategory, Tag
+from apps.catalog.store_tree import build_tree
 from apps.core.services import Roles
 from apps.inventory import services as stock
 from apps.inventory.models import StockLevel
@@ -32,7 +33,7 @@ KIT_CATEGORIES = [
     ("higiene", "Higiene", 6),
     ("originals", "Surpresa PetVila Originals", 7),
 ]
-STORE_ONLY = [("racao", "Ração", 8), ("passeio", "Passeio", 9)]
+STORE_ONLY = [("racao", "Ração", 8), ("passeio", "Passeio", 9), ("loja", "Só loja (fora dos kits)", 10)]
 
 TAGS = [
     ("frango", "Frango", "ingredient"), ("carne-bovina", "Carne bovina", "ingredient"), ("peixe", "Peixe", "ingredient"),
@@ -72,7 +73,32 @@ PRODUCTS = [
     ("racao", "Ração Natural Adulto Frango 2 kg", "racao-adulto-frango", 11990, 10990, 6500, ["frango", "cereais"], ALL, True, True),
     ("racao", "Ração Natural Adulto Cordeiro 2 kg", "racao-adulto-cordeiro", 12990, 11990, 7000, ["cordeiro"], ALL, True, True),
     ("passeio", "Guia de algodão 1,5 m", "guia-algodao", 6990, 6290, 2500, ["algodao"], ALL, True, False),
+    # Só loja: completam as subcategorias do menu sem entrar nos kits.
+    ("loja", "Mordedor de nylon Osso", "mordedor-nylon-osso", 3990, 3590, 1400, ["nylon", "mastigacao-intensa"], ["medio", "grande"], True, False),
+    ("loja", "Mordedor recheável Vila", "mordedor-recheavel-vila", 5490, 4990, 2000, ["borracha-natural"], ALL, True, False),
+    ("loja", "Tapete de farejar", "tapete-farejar", 6990, 6290, 2600, ["algodao"], ALL, True, False),
+    ("loja", "Bola recheável de petiscos", "bola-recheavel", 4290, 3890, 1500, ["borracha-natural"], ALL, True, False),
+    ("racao", "Ração úmida Natural Frango 400 g", "racao-umida-frango", 1490, 1290, 600, ["frango"], ALL, True, False),
+    ("loja", "Escova de pelos macia", "escova-pelos", 3990, 3590, 1300, [], ALL, True, False),
+    ("loja", "Hidratante de patas e focinho", "hidratante-patas", 3290, 2990, 1100, ["sem-perfume"], ALL, True, False),
+    ("loja", "Comedouro de cerâmica", "comedouro-ceramica", 7990, 7190, 3000, [], ALL, True, False),
 ]
+
+# Produto -> categoria da loja (menu). Ver apps/catalog/store_tree.py.
+STORE_OF = {
+    "bolinha-vila": "pegar-e-buscar", "corda-algodao": "mordedor-corda", "pelucia-patinha": "pelucia",
+    "mordedor-latex": "mordedor-borracha", "biobone-p": "mordedor-natural", "biobone-g": "mordedor-natural",
+    "biscoito-frango": "snacks", "biscoito-carne": "snacks", "palitinho-cordeiro": "snacks",
+    "cookie-batata-doce": "snacks", "snack-colorido": "snacks", "chips-peixe": "snacks-naturais",
+    "fatias-batata-doce": "snacks-naturais", "orelha-bovina": "snacks-naturais", "refeicao-frango": "refeicao-natural",
+    "refeicao-carne": "refeicao-natural", "refeicao-peixe": "refeicao-natural", "lenco-umedecido": "patas-e-focinho",
+    "shampoo-neutro": "banho", "escova-dental": "higiene-bucal", "saquinhos": "higiene-ambiente",
+    "racao-adulto-frango": "racao-seca", "racao-adulto-cordeiro": "racao-seca", "guia-algodao": "passeio",
+    "mordedor-nylon-osso": "mordedor-nylon", "mordedor-recheavel-vila": "mordedor-recheavel",
+    "tapete-farejar": "brinquedo-interativo", "bola-recheavel": "brinquedo-recheavel",
+    "racao-umida-frango": "racao-umida", "escova-pelos": "escovacao", "hidratante-patas": "patas-e-focinho",
+    "comedouro-ceramica": "comedouros",
+}
 
 COMPOSITIONS = {
     "essential": {"brinquedo": 1, "biobone": 0, "snack-padrao": 3, "snack-natural": 0, "refeicao-natural": 1, "higiene": 2, "originals": 0},
@@ -117,11 +143,14 @@ class Command(BaseCommand):
         return result
 
     def seed_products(self, categories, tags):
+        build_tree(StoreCategory)
+        store = {c.slug: c for c in StoreCategory.objects.all()}
         for i, (cat, name, slug, price, member, cost, tag_codes, sizes, complete, recurring) in enumerate(PRODUCTS, start=1):
             product, _ = Product.objects.update_or_create(
                 slug=slug,
                 defaults={
                     "name": name, "category": categories[cat], "is_recurring_food": recurring,
+                    "store_category": store.get(STORE_OF.get(slug, "")),
                     "is_originals": cat == "originals",
                     "short_description": f"{categories[cat].name} escolhido pela curadoria PetVila.",
                     "description": f"{name}. Selecionado pela curadoria PetVila para a rotina com o seu cão. "
@@ -138,7 +167,7 @@ class Command(BaseCommand):
                     "suitable_sizes": sizes, "attributes_complete": complete,
                     "tracks_lots": cat in ("snack-padrao", "snack-natural", "refeicao-natural", "racao"),
                     "sellable_in_store": cat != "originals",
-                    "variant_name": "2 kg" if cat == "racao" else "",
+                    "variant_name": "2 kg" if slug.startswith("racao-adulto") else "",
                 },
             )
             sku.contains.set([tags[c] for c in tag_codes])

@@ -1,10 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import type { Category } from '../api/types';
+import type { Department, ProductSummary } from '../api/types';
 import { useAuth } from '../lib/auth';
 import { useCart } from '../lib/cart';
+import { departmentOf, findSection, hueFor } from '../lib/departments';
+import { money } from '../lib/format';
 import { useApi } from '../lib/useApi';
-import { Logo } from './Brand';
+import { DogArt, Logo } from './Brand';
 import './layout.css';
 
 function SearchBox({ id }: { id: string }) {
@@ -32,20 +34,69 @@ function SearchBox({ id }: { id: string }) {
   );
 }
 
+/** Painel que abre ao passar o mouse (ou focar) num departamento: subcategorias e alguns produtos. */
+function MegaPanel({ department, products, onPick }: { department: Department; products: ProductSummary[]; onPick: () => void }) {
+  const picks = products.filter((p) => departmentOf(p) === department.slug && p.sellable).slice(0, 3);
+  return (
+    <div className="mega" role="region" aria-label={department.name}>
+      <div className="wrap mega__in">
+        <div className="mega__links">
+          <p className="mega__title">{department.name}</p>
+          <ul>
+            {department.children.map((c) => (
+              <li key={c.slug}><Link to={`/loja?section=${c.slug}`} onClick={onPick}>{c.name}</Link></li>
+            ))}
+            {department.slug === 'alimentos' && <li><Link to="/loja?food=1" onClick={onPick}>Ração recorrente</Link></li>}
+          </ul>
+          <Link to={`/loja?section=${department.slug}`} className="mega__all" onClick={onPick}>Ver tudo em {department.name}</Link>
+        </div>
+        {picks.length > 0 && (
+          <div className="mega__products">
+            {picks.map((p) => (
+              <Link key={p.slug} to={`/loja/${p.slug}`} className="mega__product" onClick={onPick}>
+                <span className="mega__pic" style={{ ['--hue' as string]: hueFor(department.slug) }} aria-hidden="true">
+                  {p.picture ? <img src={p.picture} alt="" /> : <DogArt />}
+                </span>
+                <span className="mega__name">{p.name}</span>
+                <span className="mega__price">{money(p.from_price_cents)}</span>
+                {p.from_member_price_cents !== null && p.from_member_price_cents < (p.from_price_cents ?? 0) && (
+                  <span className="mega__club">{money(p.from_member_price_cents)} no Club</span>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function Layout() {
   const { user } = useAuth();
   const { count } = useCart();
   const [open, setOpen] = useState(false);
+  const [hover, setHover] = useState<string | null>(null);
   const location = useLocation();
   const [params] = useSearchParams();
-  const categories = useApi<Category[]>('/catalog/categories/');
-  const activeCategory = location.pathname === '/loja' ? params.get('category') : null;
-  const foodActive = location.pathname === '/loja' && params.get('food') === '1';
+  const departments = useApi<Department[]>('/catalog/departments/');
+  const products = useApi<ProductSummary[]>('/catalog/products/');
+  const section = location.pathname === '/loja' ? params.get('section') || '' : '';
+  const activeDept = findSection(departments.data, section).department?.slug
+    ?? (location.pathname === '/loja' && params.get('food') === '1' ? 'alimentos' : null);
 
   useEffect(() => {
     setOpen(false);
+    setHover(null);
     window.scrollTo({ top: 0 });
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setHover(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const close = () => { setHover(null); setOpen(false); };
 
   return (
     <>
@@ -59,9 +110,9 @@ export function Layout() {
           )}
         </div>
       </div>
-      <header className="hdr">
+      <header className="hdr" onMouseLeave={() => setHover(null)}>
         <div className="hdr__in wrap">
-          <button type="button" className="hdr__icon hdr__menu" aria-expanded={open} aria-controls="menu-categorias" onClick={() => setOpen((v) => !v)}>
+          <button type="button" className="hdr__icon hdr__menu" aria-expanded={open} aria-controls="menu-mobile" onClick={() => setOpen((v) => !v)}>
             <span className="visually-hidden">Categorias</span>
             <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
           </button>
@@ -80,14 +131,39 @@ export function Layout() {
           </div>
         </div>
         <div className="wrap hdr__search-mobile"><SearchBox id="busca-celular" /></div>
-        <nav id="menu-categorias" className={`cats ${open ? 'is-open' : ''}`} aria-label="Categorias da loja">
-          <div className="wrap cats__in">
-            <Link to="/loja" className={location.pathname === '/loja' && !activeCategory && !foodActive ? 'active' : ''}>Todos os produtos</Link>
-            {categories.data?.map((c) => (
-              <Link key={c.slug} to={`/loja?category=${c.slug}`} className={activeCategory === c.slug ? 'active' : ''}>{c.name}</Link>
+
+        {/* Desktop: departamentos com painel ao passar o mouse */}
+        <nav className="depts" aria-label="Categorias da loja">
+          <ul className="wrap depts__in">
+            {departments.data?.map((d) => (
+              <li key={d.slug} onMouseEnter={() => setHover(d.slug)} onFocus={() => setHover(d.slug)}>
+                <Link to={`/loja?section=${d.slug}`} className={`depts__link ${activeDept === d.slug ? 'active' : ''} ${hover === d.slug ? 'is-hover' : ''}`}
+                  aria-expanded={d.children.length > 0 ? hover === d.slug : undefined} onClick={close}>
+                  {d.name}
+                  {d.children.length > 0 && <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="m2.5 4.5 3.5 3.5 3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                </Link>
+                {hover === d.slug && d.children.length > 0 && <MegaPanel department={d} products={products.data || []} onPick={close} />}
+              </li>
             ))}
-            <Link to="/loja?food=1" className={foodActive ? 'active' : ''}>Ração recorrente</Link>
-            <NavLink to="/planos" className="cats__club">Club PetVila</NavLink>
+          </ul>
+        </nav>
+
+        {/* Celular: departamentos em acordeão */}
+        <nav id="menu-mobile" className={`mmenu ${open ? 'is-open' : ''}`} aria-label="Categorias da loja">
+          <div className="wrap">
+            {departments.data?.map((d) => d.children.length > 0 ? (
+              <details key={d.slug} className="mmenu__group" open={activeDept === d.slug}>
+                <summary>{d.name}</summary>
+                <ul>
+                  {d.children.map((c) => <li key={c.slug}><Link to={`/loja?section=${c.slug}`}>{c.name}</Link></li>)}
+                  {d.slug === 'alimentos' && <li><Link to="/loja?food=1">Ração recorrente</Link></li>}
+                  <li><Link to={`/loja?section=${d.slug}`} className="mmenu__all">Ver tudo em {d.name}</Link></li>
+                </ul>
+              </details>
+            ) : (
+              <Link key={d.slug} to={`/loja?section=${d.slug}`} className="mmenu__single">{d.name}</Link>
+            ))}
+            <Link to="/planos" className="mmenu__single mmenu__club">Club PetVila</Link>
           </div>
         </nav>
       </header>
@@ -103,7 +179,7 @@ export function Layout() {
           <nav aria-label="Loja" className="ftr__col">
             <p className="ftr__title">Loja</p>
             <Link to="/loja">Todos os produtos</Link>
-            {categories.data?.slice(0, 5).map((c) => <Link key={c.slug} to={`/loja?category=${c.slug}`}>{c.name}</Link>)}
+            {departments.data?.map((d) => <Link key={d.slug} to={`/loja?section=${d.slug}`}>{d.name}</Link>)}
             <Link to="/loja?food=1">Ração recorrente</Link>
           </nav>
           <nav aria-label="Club" className="ftr__col">

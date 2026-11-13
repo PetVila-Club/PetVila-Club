@@ -2,7 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from apps.accounts.views import AddressViewSet, LoginView, MeView, RefreshView, RegisterView
-from apps.catalog.views import CategoryViewSet, ProductViewSet, TagViewSet
+from apps.catalog.views import CategoryViewSet, ProductViewSet, StoreDepartmentViewSet, TagViewSet
 from apps.core.ops import export_view, metrics_view
 from apps.logistics.views import DeliveryViewSet
 from apps.orders.views import OrderViewSet, checkout, quote
@@ -15,6 +15,7 @@ from apps.support.views import TicketViewSet
 
 router = DefaultRouter()
 router.register("catalog/categories", CategoryViewSet, basename="category")
+router.register("catalog/departments", StoreDepartmentViewSet, basename="department")
 router.register("catalog/tags", TagViewSet, basename="tag")
 router.register("catalog/products", ProductViewSet, basename="product")
 router.register("plans", PlanViewSet, basename="plan")

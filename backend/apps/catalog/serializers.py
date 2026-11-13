@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.core.services import get_setting
 from apps.orders.pricing import unit_price
 
-from .models import SKU, Category, Product, Tag
+from .models import SKU, Category, Product, StoreCategory, Tag
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -16,6 +16,28 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ["id", "slug", "name", "description", "is_kit_category"]
+
+
+class StoreCategoryRefSerializer(serializers.ModelSerializer):
+    parent = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StoreCategory
+        fields = ["slug", "name", "parent"]
+
+    def get_parent(self, obj):
+        return {"slug": obj.parent.slug, "name": obj.parent.name} if obj.parent_id else None
+
+
+class StoreDepartmentSerializer(serializers.ModelSerializer):
+    children = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StoreCategory
+        fields = ["slug", "name", "children"]
+
+    def get_children(self, obj):
+        return [{"slug": c.slug, "name": c.name} for c in obj.children.all() if c.is_active]
 
 
 class SKUSerializer(serializers.ModelSerializer):
@@ -48,6 +70,7 @@ class SKUSerializer(serializers.ModelSerializer):
 
 class ProductListSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
+    store_category = StoreCategoryRefSerializer(read_only=True)
     picture = serializers.CharField(read_only=True)
     from_price_cents = serializers.SerializerMethodField()
     from_list_price_cents = serializers.SerializerMethodField()
@@ -56,7 +79,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ["id", "slug", "name", "short_description", "category", "picture", "is_recurring_food", "is_originals",
+        fields = ["id", "slug", "name", "short_description", "category", "store_category", "picture", "is_recurring_food", "is_originals",
                   "from_price_cents", "from_list_price_cents", "from_member_price_cents", "sellable"]
 
     def _skus(self, obj):

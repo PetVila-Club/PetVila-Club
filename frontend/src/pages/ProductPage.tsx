@@ -17,7 +17,8 @@ export default function ProductPage() {
   const [added, setAdded] = useState(false);
   const cart = useCart();
   const navigate = useNavigate();
-  const related = useApi<ProductSummary[]>(product ? `/catalog/products/?category=${product.category.slug}` : null);
+  const sc = product?.store_category;
+  const related = useApi<ProductSummary[]>(sc ? `/catalog/products/?section=${sc.parent?.slug ?? sc.slug}` : null);
 
   useEffect(() => {
     if (product && skuId === null) setSkuId(product.skus.find((s) => s.sellable)?.id ?? product.skus[0]?.id ?? null);
@@ -37,11 +38,15 @@ export default function ProductPage() {
 
   return (
     <div className="wrap pdp">
-      <nav className="small muted pdp__crumbs" aria-label="Trilha"><Link to="/">Início</Link> / <Link to="/loja">Loja</Link> / <Link to={`/loja?category=${product.category.slug}`}>{product.category.name}</Link></nav>
+      <nav className="small muted pdp__crumbs" aria-label="Trilha">
+        <Link to="/">Início</Link> / <Link to="/loja">Loja</Link>
+        {sc?.parent && <> / <Link to={`/loja?section=${sc.parent.slug}`}>{sc.parent.name}</Link></>}
+        {sc && <> / <Link to={`/loja?section=${sc.slug}`}>{sc.name}</Link></>}
+      </nav>
       <div className="pdp__grid">
         <div className="pdp__media"><ProductPicture product={product} large /></div>
         <div className="pdp__info">
-          <p className="pdp__cat">{product.category.name}</p>
+          <p className="pdp__cat">{sc?.name ?? product.category.name}</p>
           <h1 className="pdp__name">{product.name}</h1>
           {sku && (
             <p className="pdp__price">
@@ -106,7 +111,7 @@ export default function ProductPage() {
         </div>
       </div>
       <div className="pdp__related">
-        <ProductRow title="Você também pode gostar" link={`/loja?category=${product.category.slug}`}
+        <ProductRow title="Você também pode gostar" link={sc ? `/loja?section=${sc.parent?.slug ?? sc.slug}` : '/loja'}
           products={(related.data || []).filter((p) => p.slug !== product.slug).slice(0, 4)} />
       </div>
     </div>
