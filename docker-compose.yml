@@ -1,0 +1,79 @@
+# Ambiente local completo: Postgres + Django + React (nginx) + rotina diária.
+#   cp .env.docker.example .env.docker   (opcional: chave do Asaas sandbox)
+#   docker compose up --build
+# Loja: http://localhost:8080  ·  Painel: http://localhost:8080/painel/  ·  API: http://localhost:8080/api/v1/
+name: petvila
+
+x-backend-env: &backend-env
+  DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
+  DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-dev-secret-key-change-me-0123456789abcdef}
+  DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
+  DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080}
+  DATABASE_URL: postgres://${POSTGRES_USER:-petvila}:${POSTGRES_PASSWORD:-petvila}@db:5432/${POSTGRES_DB:-petvila}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:8081,http://localhost:19006}
+  FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
+  ASAAS_API_KEY: ${ASAAS_API_KEY:-}
+  ASAAS_ENV: ${ASAAS_ENV:-sandbox}
+  ASAAS_WEBHOOK_TOKEN: ${ASAAS_WEBHOOK_TOKEN:-dev-webhook-token}
+  ALLOW_FAKE_PAYMENTS: ${ALLOW_FAKE_PAYMENTS:-0}
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-petvila}
+      POSTGRES_USER: ${POSTGRES_USER:-petvila}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-petvila}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-petvila} -d ${POSTGRES_DB:-petvila}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      <<: *backend-env
+      SEED_DEMO: ${SEED_DEMO:-1}
+      SEED_DEMO_ARGS: ${SEED_DEMO_ARGS:---demo-approve}
+    volumes:
+      - media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/api/health/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  scheduler:
+    build: ./backend
+    command: ["python", "manage.py", "run_daily_jobs", "--loop", "--interval", "3600"]
+    environment:
+      <<: *backend-env
+      RUN_MIGRATIONS: "0"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  media:

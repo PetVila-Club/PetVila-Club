@@ -1,0 +1,27 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div class="pv-action">
+  {% if description %}<p class="pv-action__desc">{{ description }}</p>{% endif %}
+  <p><strong>Itens selecionados:</strong></p>
+  <ul>{% for obj in queryset %}<li>{{ obj }}</li>{% endfor %}</ul>
+  <form method="post">{% csrf_token %}
+    {% for obj in queryset %}<input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk }}">{% endfor %}
+    <input type="hidden" name="action" value="{{ action_name }}">
+    <input type="hidden" name="apply" value="1">
+    <fieldset class="module aligned">
+      {% for field in form %}
+        <div class="form-row">
+          {{ field.errors }}
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+        </div>
+      {% endfor %}
+    </fieldset>
+    <div class="submit-row">
+      <input type="submit" class="default" value="Confirmar">
+      <a href="" class="button cancel-link" onclick="history.back();return false;">Voltar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

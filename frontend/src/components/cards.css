@@ -1,0 +1,71 @@
+/* Card de produto: imagem grande primeiro, depois nome e preço, como vitrine de loja */
+.pcard { position: relative; min-width: 0; }
+.pcard__link { display: grid; gap: 0.75rem; text-decoration: none; height: 100%; align-content: start; }
+.pcard__media { position: relative; border-radius: var(--radius-card); overflow: hidden; background: var(--paper); }
+.pcard__media .pic { transition: transform 500ms var(--ease-out); }
+.pcard:hover .pcard__media .pic { transform: scale(1.04); }
+.pcard__flags { position: absolute; left: 0.6rem; top: 0.6rem; display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.flag {
+  display: inline-flex; padding: 0.2rem 0.55rem; border-radius: 999px; background: #fff; color: var(--fucinho);
+  font-size: 0.7rem; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase;
+}
+.flag--club { background: var(--patinha); color: var(--fucinho); }
+.flag--off { background: var(--fucinho); color: var(--chamego); }
+.pcard__body { display: grid; gap: 0.2rem; padding-inline: 0.15rem; }
+.pcard__cat { font-size: 0.78rem; color: var(--ink-soft); }
+.pcard__name { font-family: var(--font-body); font-size: var(--step-0); font-weight: 600; line-height: 1.25; letter-spacing: -0.005em; }
+.pcard:hover .pcard__name { text-decoration: underline; text-underline-offset: 3px; }
+.pcard__price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.1rem 0.45rem; margin-top: 0.15rem; }
+.pcard__price .price { font-size: var(--step-0); }
+.pcard__price .price--old { margin: 0; }
+.pcard__club {
+  justify-self: start; margin-top: 0.25rem; padding: 0.2rem 0.6rem; border-radius: 0.5rem; font-size: 0.8rem;
+  background: color-mix(in srgb, var(--patinha) 16%, transparent); color: var(--terra);
+}
+.pcard__club b { font-weight: 800; }
+
+.pic { width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--paper); }
+.pic--lg { border-radius: var(--radius-card); }
+.pic--art {
+  display: grid; place-items: center; position: relative; overflow: hidden;
+  background: radial-gradient(circle at 50% 58%, color-mix(in srgb, var(--hue) 20%, var(--paper)) 0 38%, var(--paper) 38.5%);
+  color: var(--hue);
+}
+.pic--art .art { width: 34%; }
+.pic--lg.pic--art .art { width: 30%; }
+
+/* Linhas de produtos */
+.prow { display: grid; gap: 1.1rem; }
+.prow__head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.prow__head h2 { font-size: var(--step-2); }
+.prow__all { font-weight: 700; font-size: var(--step--1); white-space: nowrap; text-underline-offset: 4px; }
+.prow__list {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(11.5rem, 46%); gap: 1rem;
+  overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 0.5rem; margin-inline: calc(var(--gutter) * -1);
+  padding-inline: var(--gutter); scroll-padding-inline: var(--gutter); scrollbar-width: thin;
+}
+.prow__list > * { scroll-snap-align: start; }
+@media (min-width: 48rem) {
+  .prow__list { grid-auto-flow: row; grid-template-columns: repeat(4, 1fr); overflow: visible; margin-inline: 0; padding-inline: 0; gap: 1.5rem; }
+}
+
+.plan {
+  position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 0.85rem;
+  border-radius: var(--radius); padding: clamp(1.5rem, 1rem + 2vw, 2.5rem); background: var(--card); border: 1px solid var(--line);
+}
+.plan--core { background: var(--terra); color: var(--chamego); border-color: transparent; }
+.plan--core :focus-visible { outline-color: var(--chamego); }
+.plan__blob {
+  position: absolute; width: 16rem; height: 16rem; right: -5rem; top: -6rem; border-radius: 50%;
+  background: var(--patinha); opacity: 0.16; pointer-events: none;
+}
+.plan__flag { align-self: flex-start; }
+.plan__name { font-size: var(--step-2); }
+.plan__tagline { font-weight: 700; font-size: var(--step-1); }
+.plan__copy { opacity: 0.88; }
+.plan__originals { border: 1.5px dashed currentColor; border-radius: var(--radius-sm); padding: 0.8rem 1rem; }
+.plan__originals-title { font-weight: 800; }
+.plan__foot { margin-top: auto; display: grid; gap: 0.75rem; padding-top: 0.5rem; }
+.plan--core .btn--ghost { color: var(--chamego); border-color: var(--chamego); }
+.plan__art { position: absolute; width: 7rem; right: 1rem; bottom: 1rem; opacity: 0.12; pointer-events: none; }
+.plan--core .price__note { color: inherit; opacity: 0.85; }

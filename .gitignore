@@ -6,4 +6,18 @@ dist/
 .env
 .env.*
 !.env.example
+!.env.docker.example
 .DS_Store
+
+# Backend Python
+__pycache__/
+*.pyc
+backend/.venv/
+backend/staticfiles/
+backend/media/
+.pytest_cache/
+
+# Mobile (Expo)
+mobile/.expo/
+mobile/ios/
+mobile/android/

@@ -1,4 +1,14 @@
-# PetVila Club · Landing Page de pré-lançamento
+# PetVila Club
+
+Este repositório tem duas partes:
+
+- **E-commerce (plataforma própria)**: `backend/` (Django + Postgres + Asaas), `frontend/` (React), `mobile/` (React Native/Expo).
+  Rodar com `docker compose up --build` e abrir http://localhost:8080. Guia completo: [`docs/ecommerce.md`](docs/ecommerce.md).
+- **Landing de pré-lançamento** (Astro), descrita abaixo.
+
+---
+
+## Landing Page de pré-lançamento
 
 Astro 7 + TypeScript, sem biblioteca de animação. Página estática com funções
 serverless para o cadastro "Primeiros da Vila" (`/api/leads`) e o webhook do WhatsApp

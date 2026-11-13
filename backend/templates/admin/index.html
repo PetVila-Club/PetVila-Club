@@ -1,0 +1,17 @@
+{% extends "admin/index.html" %}
+{% block content %}
+{% if pv_metrics %}
+<h2>Rotina do dia</h2>
+<div class="pv-metrics">
+  <div class="pv-metric"><span>Ciclos aguardando curadoria</span><b>{{ pv_metrics.queues.cycles_awaiting_curation }}</b></div>
+  <div class="pv-metric"><span>Kits para revisar</span><b>{{ pv_metrics.queues.kits_to_review }}</b></div>
+  <div class="pv-metric"><span>Kits para fechar</span><b>{{ pv_metrics.queues.kits_to_close }}</b></div>
+  <div class="pv-metric"><span>Expedições abertas</span><b>{{ pv_metrics.queues.shipments_open }}</b></div>
+  <div class="pv-metric"><span>Alertas abertos</span><b>{{ pv_metrics.queues.open_alerts }}</b></div>
+  <div class="pv-metric"><span>Assinaturas ativas</span><b>{{ pv_metrics.active_subscriptions }}</b></div>
+  <div class="pv-metric"><span>Receita recorrente mensal</span><b>{{ pv_mrr }}</b></div>
+  <div class="pv-metric"><span>Pedidos pagos (30 dias)</span><b>{{ pv_metrics.paid_orders }}</b></div>
+</div>
+{% endif %}
+{{ block.super }}
+{% endblock %}

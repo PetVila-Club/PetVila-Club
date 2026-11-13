@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "PetVila Club",
+    "slug": "petvila-club",
+    "scheme": "petvila",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#FFE1BC",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "br.com.petvilaclub.app"
+    },
+    "android": {
+      "package": "br.com.petvilaclub.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#FFE1BC",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": ["expo-secure-store", "expo-font"]
+  }
+}

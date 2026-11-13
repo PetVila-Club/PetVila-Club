@@ -1,0 +1,48 @@
+name: E-commerce
+
+on:
+  pull_request:
+    paths: ["backend/**", "frontend/**", "mobile/**", ".github/workflows/ecommerce.yml"]
+  push:
+    branches: [main]
+    paths: ["backend/**", "frontend/**", "mobile/**"]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: petvila, POSTGRES_PASSWORD: petvila, POSTGRES_DB: petvila }
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    defaults: { run: { working-directory: backend } }
+    env:
+      DATABASE_URL: postgres://petvila:petvila@localhost:5432/petvila
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.13" }
+      - run: pip install -r requirements-dev.txt
+      - run: DJANGO_DEBUG=1 python manage.py makemigrations --check --dry-run
+      - run: pytest -p no:cacheprovider --create-db
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - run: npm ci
+      - run: npm run build
+
+  mobile:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: mobile } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - run: npm ci
+      - run: npm run typecheck
