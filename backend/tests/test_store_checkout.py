@@ -170,6 +170,7 @@ def test_store_menu_tree_and_section_filter(api, seeded):
     menu = {d["slug"]: [c["slug"] for c in d["children"]] for d in api.get("/api/v1/catalog/departments/").json()}
     assert list(menu)[:4] == ["alimentos", "higiene-e-cuidado", "mordedores", "brinquedos"]
     assert {"snacks", "snacks-naturais", "racao-seca", "racao-umida"} <= set(menu["alimentos"])
+    assert menu["acessorios"] == ["passeio"] and "passeio" not in menu
     food = api.get("/api/v1/catalog/products/?section=alimentos").json()
     assert {p["store_category"]["parent"]["slug"] for p in food} == {"alimentos"}
     snacks = api.get("/api/v1/catalog/products/?section=snacks").json()

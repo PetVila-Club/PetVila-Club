@@ -3,7 +3,7 @@ import type { Department, ProductSummary } from '../api/types';
 /** Cor da ilustração por departamento da loja. */
 const HUE: Record<string, string> = {
   alimentos: 'var(--terra)', 'higiene-e-cuidado': '#6f7f5a', mordedores: '#8b5a2b', brinquedos: 'var(--patinha)',
-  passeio: 'var(--fucinho)',
+  acessorios: 'var(--fucinho)',
 };
 
 export function departmentOf(product: ProductSummary): string | null {

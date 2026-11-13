@@ -28,7 +28,9 @@ STORE_TREE = [
         ("pelucia", "Pelúcia"),
         ("pegar-e-buscar", "Pegar e buscar"),
     ]),
-    ("passeio", "Passeio", []),
+    ("acessorios", "Acessórios", [
+        ("passeio", "Passeio"),
+    ]),
 ]
 
 # Produtos já cadastrados: categoria de kit -> categoria da loja, quando o encaixe é inequívoco.
