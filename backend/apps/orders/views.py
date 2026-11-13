@@ -51,7 +51,8 @@ class OrderSerializer(serializers.ModelSerializer):
 @permission_classes([permissions.AllowAny])
 def quote(request):
     """CHK-01: total calculado no servidor para exibir antes da confirmação."""
-    result = build_quote(request.user, request.data.get("items") or [], request.data.get("cep"))
+    result = build_quote(request.user, request.data.get("items") or [], request.data.get("cep"),
+                         subscription_key=request.data.get("subscription_key"))
     return Response(result.as_dict())
 
 
@@ -66,6 +67,7 @@ def checkout(request):
         accept_terms=bool(request.data.get("accept_terms")),
         idempotency_key=request.headers.get("Idempotency-Key") or request.data.get("idempotency_key", ""),
         ip=client_ip(request),
+        subscription_key=request.data.get("subscription_key") or "",
     )
     return Response(OrderSerializer(order).data, status=201)
 

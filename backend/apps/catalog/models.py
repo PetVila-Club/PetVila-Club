@@ -145,7 +145,10 @@ class SKU(TimeStampedModel):
 
     @property
     def display_name(self) -> str:
-        return f"{self.product.name}{' · ' + self.variant_name if self.variant_name else ''}"
+        # Evita repetir a variante quando ela já está no nome do produto (ex.: "Ração ... 2 kg · 2 kg").
+        if not self.variant_name or self.variant_name in self.product.name:
+            return self.product.name
+        return f"{self.product.name} · {self.variant_name}"
 
     def missing_sale_data(self) -> list[str]:
         missing = []

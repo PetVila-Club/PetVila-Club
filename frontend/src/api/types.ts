@@ -55,11 +55,16 @@ export interface Payment {
 
 export interface QuoteLine {
   sku_id: number; sku_code: string; name: string; quantity: number; list_price_cents: number; unit_price_cents: number;
-  total_cents: number; available: number;
+  total_cents: number; member_unit_price_cents: number; available: number;
+}
+export interface ClubOffer {
+  plan_code: string; plan_name: string; tagline: string; highlight: boolean; price_cents: number; matches_cart: boolean;
+  top_item: string; department_slug: string | null; department_name: string | null;
 }
 export interface Quote {
   lines: QuoteLine[]; member_pricing: boolean; subtotal_cents: number; discount_cents: number; shipping_cents: number;
   total_cents: number; eta_days: number | null; zone: string | null; problems: string[]; can_checkout: boolean;
+  member_merchandise_cents: number; club_savings_cents: number; club_offer: ClubOffer | null;
 }
 
 export interface OrderLine {

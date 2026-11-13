@@ -95,17 +95,19 @@ export function useAddresses() {
   return useFetch<Address[]>(user ? '/me/addresses/' : null);
 }
 
+// Recorrência (planos e ração) só cartão; loja avulsa, cartão ou Pix (regra de 13/11/2026).
 const BILLING = [
-  { key: 'PIX', label: 'Pix' },
-  { key: 'BOLETO', label: 'Boleto' },
   { key: 'CREDIT_CARD', label: 'Cartão (página segura do Asaas)' },
+  { key: 'PIX', label: 'Pix' },
 ];
 
-export function BillingChoice({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function BillingChoice({ value, onChange, recurring = false }: { value: string; onChange: (v: string) => void; recurring?: boolean }) {
+  const options = recurring ? BILLING.filter((b) => b.key === 'CREDIT_CARD') : BILLING;
   return (
     <View style={{ gap: 8 }}>
       <Text style={{ fontFamily: fonts.bold }}>Forma de pagamento</Text>
-      {BILLING.map((b) => <Choice key={b.key} label={b.label} selected={value === b.key} onPress={() => onChange(b.key)} />)}
+      {recurring && <Text variant="small">Assinaturas são pagas só com cartão de crédito.</Text>}
+      {options.map((b) => <Choice key={b.key} label={b.label} selected={value === b.key} onPress={() => onChange(b.key)} />)}
     </View>
   );
 }

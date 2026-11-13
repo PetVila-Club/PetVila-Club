@@ -77,17 +77,27 @@ export function CpfGate() {
   );
 }
 
+/**
+ * Meios aceitos (regra de 13/11/2026): recorrência (planos e ração) só cartão de crédito;
+ * compra avulsa da loja, cartão de crédito ou Pix. O servidor recusa qualquer outro.
+ */
+export const RECURRING_BILLING = ['CREDIT_CARD'];
+export const STORE_BILLING = ['CREDIT_CARD', 'PIX'];
+
 export function BillingPicker({ value, onChange, recurring = false }: { value: string; onChange: (v: string) => void; recurring?: boolean }) {
   const hints: Record<string, string> = {
-    PIX: recurring ? 'Uma cobrança Pix por mês, enviada antes do vencimento.' : 'Aprovação em instantes.',
-    BOLETO: 'Compensação em até 3 dias úteis.',
-    CREDIT_CARD: 'Você informa o cartão na página segura do Asaas. A PetVila não recebe nem guarda dados de cartão.',
+    PIX: 'Aprovação em instantes.',
+    CREDIT_CARD: recurring
+      ? 'Cobrança automática todo mês no cartão. Você informa o cartão na página segura do Asaas; a PetVila não recebe nem guarda dados de cartão.'
+      : 'Você informa o cartão na página segura do Asaas. A PetVila não recebe nem guarda dados de cartão.',
   };
+  const keys = recurring ? RECURRING_BILLING : STORE_BILLING;
   return (
     <fieldset>
       <legend>Forma de pagamento</legend>
+      {recurring && <p className="field__hint" style={{ marginBottom: '0.6rem' }}>Assinaturas e ração recorrente são pagas só com cartão de crédito.</p>}
       <div className="choice-grid">
-        {Object.entries(BILLING_LABEL).map(([key, label]) => (
+        {keys.map((key) => [key, BILLING_LABEL[key]] as const).map(([key, label]) => (
           <label className="choice" key={key}>
             <input type="radio" name="billing" checked={value === key} onChange={() => onChange(key)} />
             <strong>{label}</strong>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import type { Quote } from '../api/types';
+import { ClubCartOffer } from '../components/Club';
 import { Alert, Empty, Spinner } from '../components/common';
 import { useCart } from '../lib/cart';
 import { money } from '../lib/format';
@@ -60,6 +61,7 @@ export default function Cart() {
               );
             })}
           </ul>
+          <div className="stack">
           <aside className="card card--strong stack">
             <h2 style={{ fontSize: 'var(--step-1)' }}>Resumo</h2>
             <div className="summary">
@@ -71,6 +73,8 @@ export default function Cart() {
             <Link to="/checkout" className="btn btn--brand btn--block" aria-disabled={quote.problems.length > 0}
               onClick={(e) => { if (quote.problems.length) e.preventDefault(); }}>Continuar para o checkout</Link>
           </aside>
+          <ClubCartOffer quote={quote} />
+          </div>
         </div>
       )}
     </div>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api, ApiError, newIdempotencyKey } from '../api/client';
 import type { Address, Order, Quote } from '../api/types';
 import { AddressPicker, BillingPicker, CpfGate } from '../components/CheckoutParts';
+import { ClubCartOffer } from '../components/Club';
 import { Alert, Empty, Spinner } from '../components/common';
 import { useAuth } from '../lib/auth';
 import { useCart } from '../lib/cart';
@@ -69,6 +70,7 @@ export default function Checkout() {
       </header>
       <div className="grid grid--2" style={{ alignItems: 'start' }}>
         <div className="stack" style={{ ['--stack' as string]: '1.75rem' }}>
+          {quote && <ClubCartOffer quote={quote} compact />}
           <CpfGate />
           <AddressPicker value={addressId} onChange={(id, a) => { setAddressId(id); setAddress(a); }} />
           <BillingPicker value={billing} onChange={setBilling} />

@@ -26,6 +26,7 @@ export function dateTime(value: string | null | undefined): string {
 }
 
 export const SIZE_LABEL: Record<string, string> = { pequeno: 'Pequeno', medio: 'Médio', grande: 'Grande' };
+// BOLETO fica só para exibir cobranças antigas; não é mais oferecido.
 export const BILLING_LABEL: Record<string, string> = { PIX: 'Pix', BOLETO: 'Boleto', CREDIT_CARD: 'Cartão de crédito' };
 
 export function cepMask(value: string): string {

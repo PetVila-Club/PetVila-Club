@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { Plan } from '../api/types';
+import type { Plan, Quote } from '../api/types';
 import { useAuth } from '../lib/auth';
 import { money } from '../lib/format';
 import { useApi } from '../lib/useApi';
@@ -63,5 +63,58 @@ export function ClubNote({ listCents, memberCents }: { listCents: number | null;
       <p className="small">Assine o Vila Essential ou o Vila Care e pague o preço de membro neste e em outros produtos.</p>
       <Link to="/planos">Conhecer o Club</Link>
     </div>
+  );
+}
+
+/** Chamada ligada ao que está no carrinho, por departamento. Não promete composição do kit. */
+const HOOK: Record<string, string> = {
+  alimentos: 'Quem cuida do que o cão come merece preço de membro.',
+  'higiene-e-cuidado': 'Cuidado com o seu cão, todo mês, com preço de membro.',
+  mordedores: 'Para o cão que vive mordendo alguma coisa.',
+  brinquedos: 'Brincadeira nova todo mês e preço de membro na loja.',
+  acessorios: 'Passeio, rotina e um kit do Club todo mês.',
+};
+
+/**
+ * Oferta do Club no carrinho e no checkout para quem ainda não é assinante: escolhe o plano pelo que está
+ * no carrinho e mostra quanto este mesmo pedido custa com preço de membro.
+ */
+export function ClubCartOffer({ quote, compact = false }: { quote: Quote; compact?: boolean }) {
+  const offer = quote.club_offer;
+  if (quote.member_pricing || !offer) return null;
+  const now = quote.subtotal_cents - quote.discount_cents;
+  const savings = quote.club_savings_cents;
+  const cheaper = quote.lines.filter((l) => l.member_unit_price_cents < l.unit_price_cents);
+  const hook = (offer.department_slug && HOOK[offer.department_slug]) || 'Faça parte do Club e pague preço de membro.';
+
+  return (
+    <section className={`club-offer ${compact ? 'club-offer--compact' : ''}`} aria-labelledby="club-offer-title">
+      <div className="club-offer__art" aria-hidden="true"><BoxArt /></div>
+      <h2 id="club-offer-title">{hook}</h2>
+      <p>
+        Você está levando <strong>{offer.top_item}</strong>. Assinando o <strong>{offer.plan_name}</strong>, seu cão recebe um kit
+        por mês montado pelo perfil dele e você paga preço de membro na loja, a partir deste pedido.
+      </p>
+      {savings > 0 && (
+        <div className="club-offer__deal">
+          <span>Este pedido com preço de membro</span>
+          <span className="club-offer__prices"><s>{money(now)}</s> <b>{money(quote.member_merchandise_cents)}</b></span>
+          <span className="club-offer__save">Você economiza {money(savings)} já nesta compra</span>
+        </div>
+      )}
+      {!compact && cheaper.length > 0 && (
+        <ul className="club-offer__items">
+          {cheaper.slice(0, 4).map((l) => (
+            <li key={l.sku_id}><span>{l.name}</span><span><s>{money(l.unit_price_cents)}</s> {money(l.member_unit_price_cents)}</span></li>
+          ))}
+        </ul>
+      )}
+      <div className="club-offer__cta">
+        <Link to={`/assinar/${offer.plan_code}?carrinho=1`} className="btn btn--brand">
+          {savings > 0 ? `Assinar e levar por ${money(quote.member_merchandise_cents)}` : `Assinar o ${offer.plan_name}`}
+        </Link>
+        <span className="small">{offer.plan_name}: {money(offer.price_cents)} por mês, por cão. <Link to="/planos">Comparar planos</Link></span>
+      </div>
+    </section>
   );
 }

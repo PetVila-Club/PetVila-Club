@@ -191,3 +191,50 @@ def check_kit_model_limit(plan: Plan, exclude_pk: int | None = None) -> None:
             f"Limite de {limit} modelos ativos para o {plan.name} atingido. Arquive um modelo antes de ativar outro.",
             code="kit_model_limit",
         )
+
+
+# ---------------- Oferta do Club no checkout da loja ----------------
+
+
+def recommend_plan_for_cart(lines) -> dict | None:
+    """Escolhe o plano mais ligado ao que está no carrinho e devolve o contexto para a chamada.
+
+    Pontua cada plano disponível pelas unidades do carrinho cujas categorias de kit aparecem na
+    composição publicada do plano; empate vai para o plano em destaque. Só oferece plano com preço publicado.
+    """
+    candidates = []
+    for plan in Plan.objects.filter(is_active=True).order_by("sort"):
+        offer = plan.current_offer()
+        if offer is None or not offer.price_cents:
+            continue
+        composition = plan.current_composition()
+        covered = set()
+        if composition:
+            covered = {line.category.slug for line in composition.lines.select_related("category") if line.quantity > 0}
+        score = sum(line.quantity for line in lines if line.sku.product.category.slug in covered)
+        candidates.append((score, plan.highlight, -plan.sort, plan, offer))
+    if not candidates:
+        return None
+    score, _, _, plan, offer = max(candidates, key=lambda c: (c[0], c[1], c[2]))
+
+    top = max(lines, key=lambda line: line.total_cents)
+    departments: dict[str, list] = {}
+    for line in lines:
+        sc = line.sku.product.store_category
+        if sc is None:
+            continue
+        dept = sc.parent or sc
+        entry = departments.setdefault(dept.slug, [dept.name, 0])
+        entry[1] += line.quantity
+    dept_slug, (dept_name, _) = max(departments.items(), key=lambda kv: kv[1][1]) if departments else (None, (None, 0))
+    return {
+        "plan_code": plan.code,
+        "plan_name": plan.name,
+        "tagline": plan.tagline,
+        "highlight": plan.highlight,
+        "price_cents": offer.price_cents,
+        "matches_cart": score > 0,
+        "top_item": top.sku.product.name,
+        "department_slug": dept_slug,
+        "department_name": dept_name,
+    }

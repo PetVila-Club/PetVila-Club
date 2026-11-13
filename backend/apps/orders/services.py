@@ -16,19 +16,20 @@ from apps.payments.asaas import AsaasError
 from .models import Order, OrderLine
 from .pricing import build_quote
 
-BILLING_TYPES = {"PIX", "BOLETO", "CREDIT_CARD"}
+# Compra avulsa da loja: cartão de crédito ou Pix (regra de 13/11/2026; boleto saiu).
+BILLING_TYPES = {"PIX", "CREDIT_CARD"}
 STORE_TERMS_VERSION = "2026-11-01"
 
 
 def checkout_store(user, *, items: list[dict], address_id: int, billing_type: str, expected_total_cents: int,
-                   accept_terms: bool, idempotency_key: str, ip: str = "") -> Order:
+                   accept_terms: bool, idempotency_key: str, ip: str = "", subscription_key: str = "") -> Order:
     if not idempotency_key or len(idempotency_key) > 120:
         raise DomainError("Chave de idempotência ausente ou inválida.")
     existing = Order.objects.filter(user=user, idempotency_key=idempotency_key).first()
     if existing:
         return existing  # CHK-03: repetir a solicitação não cria nova compra
     if billing_type not in BILLING_TYPES:
-        raise DomainError("Meio de pagamento indisponível.")
+        raise DomainError("Na loja, o pagamento é por cartão de crédito ou Pix.", code="billing_not_allowed")
     if not accept_terms:
         raise DomainError("É preciso aceitar as condições da compra.")
     if not user.cpf:
@@ -37,7 +38,7 @@ def checkout_store(user, *, items: list[dict], address_id: int, billing_type: st
     if address is None:
         raise DomainError("Endereço não encontrado.")
 
-    quote = build_quote(user, items, address.cep_digits)
+    quote = build_quote(user, items, address.cep_digits, subscription_key=subscription_key)
     if quote.problems:
         raise ConflictError(" ".join(quote.problems), code="quote_problems", data={"quote": quote.as_dict()})
     if quote.total_cents != expected_total_cents:
@@ -58,7 +59,8 @@ def checkout_store(user, *, items: list[dict], address_id: int, billing_type: st
                 shipping_zone=quote.zone.name if quote.zone else "",
                 eta_days=quote.eta_days,
                 billing_type=billing_type,
-                accepted_terms={"version": STORE_TERMS_VERSION, "accepted_at": timezone.now().isoformat(), "ip": ip},
+                accepted_terms={"version": STORE_TERMS_VERSION, "accepted_at": timezone.now().isoformat(), "ip": ip,
+                                "member_via_subscription": subscription_key or None},
                 idempotency_key=idempotency_key,
                 expires_at=timezone.now() + timedelta(hours=int(get_setting("store_order_expiration_hours"))),
             )
