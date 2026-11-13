@@ -30,6 +30,8 @@ STORE_TREE = [
     ]),
     ("acessorios", "Acessórios", [
         ("passeio", "Passeio"),
+        ("comedouros", "Comedouros"),
+        ("bolsas-e-organizadores", "Bolsas e organizadores"),
     ]),
 ]
 

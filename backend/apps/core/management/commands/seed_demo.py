@@ -81,6 +81,7 @@ PRODUCTS = [
     ("racao", "Ração úmida Natural Frango 400 g", "racao-umida-frango", 1490, 1290, 600, ["frango"], ALL, True, False),
     ("loja", "Escova de pelos macia", "escova-pelos", 3990, 3590, 1300, [], ALL, True, False),
     ("loja", "Hidratante de patas e focinho", "hidratante-patas", 3290, 2990, 1100, ["sem-perfume"], ALL, True, False),
+    ("loja", "Comedouro de cerâmica", "comedouro-ceramica", 7990, 7190, 3000, [], ALL, True, False),
 ]
 
 # Produto -> categoria da loja (menu). Ver apps/catalog/store_tree.py.
@@ -96,6 +97,7 @@ STORE_OF = {
     "mordedor-nylon-osso": "mordedor-nylon", "mordedor-recheavel-vila": "mordedor-recheavel",
     "tapete-farejar": "brinquedo-interativo", "bola-recheavel": "brinquedo-recheavel",
     "racao-umida-frango": "racao-umida", "escova-pelos": "escovacao", "hidratante-patas": "patas-e-focinho",
+    "comedouro-ceramica": "comedouros",
 }
 
 COMPOSITIONS = {
